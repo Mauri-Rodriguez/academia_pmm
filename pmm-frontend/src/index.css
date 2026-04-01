@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  background-color: #0B0F1A;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Títulos con estilo de pergamino oficial */
+h1, h2, .font-scholar {
+  font-family: 'Cinzel', serif;
+}
+
+/* Efecto de textura de papel para el pergamino */
+.bg-parchment-texture {
+  background-image: url("https://www.transparenttextures.com/patterns/cream-paper.png");
+}

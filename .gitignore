@@ -1,0 +1,7 @@
+pmm-backend/node_modules/
+pmm-frontend/node_modules/
+pmm-backend/.env
+pmm-frontend/dist/
+pmm-frontend/build/
+.DS_Store
+Thumbs.db
