@@ -15,17 +15,20 @@ const { QueryTypes } = require('sequelize'); //
  */
 exports.obtenerResumenEstudiantes = async (req, res) => {
     try {
-        // Buscamos a todos los usuarios que tengan el rol de 'estudiante'
+        // 🚩 1. Agregamos 'ultima_conexion' a la consulta
         const estudiantes = await Usuario.findAll({
             where: { rol: 'estudiante' },
-            attributes: ['id_usuario', 'nombre_completo', 'correo', 'rol']
+            attributes: ['id_usuario', 'nombre_completo', 'correo', 'rol', 'ultima_conexion'] 
         });
 
         if (!estudiantes || estudiantes.length === 0) {
-            return res.status(404).json({ mensaje: 'No hay estudiantes registrados en la plataforma.' });
+            return res.status(200).json({ 
+                mensaje: 'No hay estudiantes registrados.',
+                total_estudiantes: 0,
+                reporte: []
+            });
         }
 
-        // Por cada estudiante, buscamos su rango y su progreso
         const reporteCompleto = await Promise.all(estudiantes.map(async (estudiante) => {
             const diagnostico = await Diagnostico.findOne({
                 where: { id_usuario: estudiante.id_usuario },
@@ -46,7 +49,9 @@ exports.obtenerResumenEstudiantes = async (req, res) => {
                 id_estudiante: estudiante.id_usuario,
                 nombre: estudiante.nombre_completo,
                 correo: estudiante.correo,
-                rango_ia_asignado: diagnostico ? diagnostico.nivel_asignado : 'Sin evaluación',
+                // 🚩 2. Pasamos la última conexión al Frontend
+                ultima_conexion: estudiante.ultima_conexion, 
+                rango_ia_asignado: diagnostico ? diagnostico.nivel_asignado : 'Genin (Iniciado)',
                 puntaje_diagnostico: diagnostico ? diagnostico.puntaje_obtenido : 0,
                 modulos_en_curso: progresos.length,
                 avance_promedio: Math.round(promedioAvance) + '%'
@@ -54,14 +59,14 @@ exports.obtenerResumenEstudiantes = async (req, res) => {
         }));
 
         res.status(200).json({
-            mensaje: 'Reporte general de estudiantes generado con éxito',
+            mensaje: 'Reporte generado con éxito',
             total_estudiantes: estudiantes.length,
             reporte: reporteCompleto
         });
 
     } catch (error) {
         console.error('Error al generar el reporte del docente:', error);
-        res.status(500).json({ mensaje: 'Error interno al generar el reporte de la clase.' });
+        res.status(500).json({ mensaje: 'Error interno al generar el reporte.' });
     }
 };
 

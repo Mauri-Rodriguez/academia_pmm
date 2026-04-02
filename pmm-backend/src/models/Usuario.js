@@ -54,10 +54,14 @@ const Usuario = sequelize.define('Usuario', {
         type: DataTypes.ENUM('Activo', 'Inactivo'),
         allowNull: false,
         defaultValue: 'Activo' // 🚩 El campo que faltaba
+    },
+    verificado: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
     }
 }, {
     tableName: 'usuarios',
-    timestamps: false 
+    timestamps: false
 });
 
 module.exports = Usuario;

@@ -29,15 +29,15 @@ const extraerIdUsuario = (req) => {
     } catch (err) { return null; }
 };
 
-// --- ⚡ GESTIÓN DE ERRORES E IA ---
 
-// --- ⚡ GESTIÓN DE ERRORES CON GEMINI 2.0 FLASH ---
+
+// --- ⚡ GESTIÓN DE ERRORES CON GEMINI 2.50 FLASH-LITE ---
 
 exports.registrarFallo = async (req, res) => {
     try {
         const { id_pregunta, respuesta_dada } = req.body;
         const id_usuario = extraerIdUsuario(req);
-        
+
         // 1. Obtener la pregunta de la base de datos
         const preguntaDB = await Ejercicio.findByPk(id_pregunta);
         if (!preguntaDB) return res.status(404).json({ error: "Sello no hallado" });
@@ -78,47 +78,47 @@ exports.registrarFallo = async (req, res) => {
             const textoRespuestaAlumno = preguntaDB[columnaDada];
             const textoRespuestaCorrecta = preguntaDB[formatColumna(preguntaDB.respuesta_correcta)];
 
-            const prompt = `Actúa como un maestro ninja de matemáticas. 
+            const prompt = `Actúa como un maestro sabio y con gran experiencia en matemáticas. 
             El estudiante falló en: "${preguntaDB.pregunta}". 
             Eligió: "${textoRespuestaAlumno}". 
             La respuesta correcta era: "${textoRespuestaCorrecta}". 
             Explica el error en máximo 3 oraciones breves y termina con un "🥷🏾Pista Ninja:" motivadora. 
             IMPORTANTE: No uses signos de peso ($), ni formato LaTeX. Escribe las fórmulas como texto normal (ejemplo: f(x) = 0).
-            No des la respuesta directa, guía su lógica fomentando el pensamiento crítico.`;
+            No des la respuesta correcta nunca, guía su lógica fomentando el pensamiento crítico.`;
 
             try {
-                // 🚩 Usamos 1.5-flash para evitar límites de cuota rápidos
+                // 🚩 Usamos 2.5-flash-lite para evitar límites de cuota rápidos
                 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
                 const result = await model.generateContent(prompt);
                 explicacionIA = result.response.text();
                 console.log(`⚡ [GEMINI API] Nueva explicación generada para la pregunta ${id_pregunta}.`);
-            } catch (err) { 
-                console.error("❌ Error en Gemini:", err.message); 
+            } catch (err) {
+                console.error("❌ Error en Gemini:", err.message);
                 explicacionIA = "El oráculo está meditando en las montañas. Analiza el sello por tu cuenta.";
             }
         }
         // -------------------------------------------------------------
 
         // 3. Guardar SIEMPRE en el historial para no perder las analíticas del profesor
-        await HistorialError.create({ 
-            id_usuario, 
-            id_pregunta, 
-            respuesta_dada: columnaDada, 
-            explicacion_ia: explicacionIA, 
-            fecha_error: new Date() 
+        await HistorialError.create({
+            id_usuario,
+            id_pregunta,
+            respuesta_dada: columnaDada,
+            explicacion_ia: explicacionIA,
+            fecha_error: new Date()
         });
 
         return res.status(201).json({ explicacion_ia: explicacionIA });
-    } catch (e) { 
+    } catch (e) {
         console.error("Error crítico en registrarFallo:", e);
-        res.status(500).json({ error: "Error interno del Dojo" }); 
+        res.status(500).json({ error: "Error interno del Dojo" });
     }
 };
 
 exports.obtenerErroresRecientes = async (req, res) => {
     try {
         const id_usuario = extraerIdUsuario(req);
-        
+
         // 1. Traemos todo: la pregunta, el historial, las 4 opciones y la respuesta correcta
         const errores = await db.query(
             `SELECT 
@@ -136,29 +136,29 @@ exports.obtenerErroresRecientes = async (req, res) => {
         // 2. Mapeamos y traducimos las columnas crudas al texto real
         const erroresFormateados = errores.map(err => {
             // Aseguramos el formato correcto (ej: "opcion_d")
-            const colDada = String(err.respuesta_dada).toLowerCase().includes('opcion_') 
-                ? err.respuesta_dada.toLowerCase() 
+            const colDada = String(err.respuesta_dada).toLowerCase().includes('opcion_')
+                ? err.respuesta_dada.toLowerCase()
                 : `opcion_${err.respuesta_dada.toLowerCase()}`;
-                
-            const colCorrecta = String(err.respuesta_correcta).toLowerCase().includes('opcion_') 
-                ? err.respuesta_correcta.toLowerCase() 
+
+            const colCorrecta = String(err.respuesta_correcta).toLowerCase().includes('opcion_')
+                ? err.respuesta_correcta.toLowerCase()
                 : `opcion_${err.respuesta_correcta.toLowerCase()}`;
-            
+
             return {
                 fecha_error: err.fecha_error,
                 tema_modulo: err.tema_modulo,
                 pregunta_texto: err.pregunta_texto,
                 explicacion_ia: err.explicacion_ia,
                 // Aquí ocurre la magia: buscamos en el objeto el valor de la columna
-                respuesta_incorrecta: err[colDada] || err.respuesta_dada, 
-                respuesta_correcta: err[colCorrecta] || err.respuesta_correcta 
+                respuesta_incorrecta: err[colDada] || err.respuesta_dada,
+                respuesta_correcta: err[colCorrecta] || err.respuesta_correcta
             };
         });
 
         res.json(erroresFormateados);
-    } catch (e) { 
+    } catch (e) {
         console.error("Error al formatear bitácora:", e);
-        res.status(500).json({ error: 'Error bitácora' }); 
+        res.status(500).json({ error: 'Error bitácora' });
     }
 };
 
@@ -174,16 +174,17 @@ exports.obtenerPreguntasDiagnostico = async (req, res) => {
 // 🚩 FUNCIÓN: FINALIZAR MÓDULO, OTORGAR INSIGNIA Y EVALUAR ASCENSO
 // 🚩 FUNCIÓN: FINALIZAR MÓDULO Y EVALUAR ASCENSO (BLINDADA)
 // 🚩 FUNCIÓN: FINALIZAR MÓDULO Y EVALUAR ASCENSO (Sincronización Total de Columnas)
+// 🚩 FUNCIÓN: FINALIZAR MÓDULO Y EVALUAR ASCENSO (Sincronización y Lógica por Tiers)
 exports.finalizarModulo = async (req, res) => {
     const t = await db.transaction();
     try {
         const { id_modulo } = req.body;
         const id_usuario = extraerIdUsuario(req);
 
-        // 1. FORZAR EL 100% EN PROGRESO
+        // 1. FORZAR EL 100% EN PROGRESO (Añadido intentos_realizados para prevenir errores de constraint)
         await db.query(`
-            INSERT INTO progreso_estudiante (id_usuario, id_modulo, porcentaje_avance, ultima_actualizacion)
-            VALUES (?, ?, 100, NOW())
+            INSERT INTO progreso_estudiante (id_usuario, id_modulo, porcentaje_avance, intentos_realizados, ultima_actualizacion)
+            VALUES (?, ?, 100, 1, NOW())
             ON DUPLICATE KEY UPDATE porcentaje_avance = 100, ultima_actualizacion = NOW()
         `, { replacements: [id_usuario, id_modulo], transaction: t });
 
@@ -193,23 +194,33 @@ exports.finalizarModulo = async (req, res) => {
             { replacements: [id_usuario, id_modulo], transaction: t }
         );
 
-        // 3. CONSULTAR ESTADO ACTUAL (Leemos de la columna 'rango')
+        // 3. CONSULTAR ESTADO ACTUAL (Damos prioridad a rango_actual si existe)
         const usuario = await Usuario.findByPk(id_usuario, { transaction: t });
-        const rangoActual = usuario?.rango || 'Genin (Iniciado)';
+        const rangoActual = usuario?.rango_actual || usuario?.rango || 'Genin (Iniciado)';
 
-        // 4. CONTEO DE MÓDULOS DEL NIVEL
-        const modulosDelNivel = await Modulo.findAll({ 
-            where: { nivel: rangoActual },
+        // 🚩 4. CONTEO DE MÓDULOS AGRUPADOS POR TIER (La clave para no estancarse)
+        let nivelesAEvaluar = [];
+        if (rangoActual.includes('Genin')) {
+            nivelesAEvaluar = ['Genin (Iniciado)', 'Bajo'];
+        } else if (rangoActual.includes('Chunin')) {
+            // Para ser Jonin, evaluamos que haya cumplido todo lo básico y lo intermedio
+            nivelesAEvaluar = ['Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio'];
+        } else if (rangoActual.includes('Jonin')) {
+            nivelesAEvaluar = ['Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto'];
+        }
+
+        const modulosDelNivel = await Modulo.findAll({
+            where: { nivel: { [Op.in]: nivelesAEvaluar } },
             attributes: ['id_modulo'],
-            transaction: t 
+            transaction: t
         });
-        
+
         const idsModulosNivel = modulosDelNivel.map(m => m.id_modulo);
         const totalMisionesNivel = idsModulosNivel.length;
 
         const completadosDelNivel = await ProgresoEstudiante.count({
             distinct: true,
-            col: 'id_modulo', 
+            col: 'id_modulo',
             where: {
                 id_usuario,
                 porcentaje_avance: 100,
@@ -218,34 +229,36 @@ exports.finalizarModulo = async (req, res) => {
             transaction: t
         });
 
-        console.log(`[SISTEMA] Usuario: ${id_usuario} | Nivel Actual: ${rangoActual} | Progreso: ${completadosDelNivel}/${totalMisionesNivel}`);
+        console.log(`[SISTEMA ASCENSO] Usuario: ${id_usuario} | Rango: ${rangoActual} | Progreso: ${completadosDelNivel}/${totalMisionesNivel}`);
 
         let ascendio = false;
         let nuevoRango = rangoActual;
         let mensajeAscenso = "";
 
-        // 5. LÓGICA DE ASCENSO
+        // 🚩 5. LÓGICA DE ASCENSO BLINDADA (Usando .includes para mayor tolerancia)
         if (totalMisionesNivel > 0 && completadosDelNivel === totalMisionesNivel) {
-            if (rangoActual === 'Genin (Iniciado)') {
+            if (rangoActual.includes('Genin')) {
                 nuevoRango = 'Chunin (Guerrero)';
                 mensajeAscenso = "¡Felicidades! La aldea te reconoce ahora como Chunin.";
                 ascendio = true;
-            } else if (rangoActual === 'Chunin (Guerrero)') {
+            } else if (rangoActual.includes('Chunin')) {
                 nuevoRango = 'Jonin (Maestro)';
                 mensajeAscenso = "¡Increíble! Has alcanzado el rango de Maestro Jonin.";
+                ascendio = true;
+            } else if (rangoActual.includes('Jonin')) {
+                nuevoRango = 'Kage (Leyenda)'; // O el nombre supremo que prefieras
+                mensajeAscenso = "¡Has dominado todas las artes matemáticas de la academia! Ahora eres una Leyenda viva.";
                 ascendio = true;
             }
 
             if (ascendio) {
-                // 🚩 BLINDAJE TOTAL: Actualizamos todas las columnas posibles para evitar discrepancias
-                // 1. Tabla Usuarios (Columna rango y rango_actual)
+                // BLINDAJE TOTAL: Actualizamos todas las columnas
                 await db.query(`
                     UPDATE usuarios 
                     SET rango = ?, rango_actual = ? 
                     WHERE id_usuario = ?
                 `, { replacements: [nuevoRango, nuevoRango, id_usuario], transaction: t });
 
-                // 2. Tabla Diagnostico (Para que el historial no bloquee el Dashboard)
                 await db.query(`
                     UPDATE diagnostico 
                     SET nivel_asignado = ? 
@@ -253,7 +266,6 @@ exports.finalizarModulo = async (req, res) => {
                     ORDER BY fecha_realizacion DESC LIMIT 1
                 `, { replacements: [nuevoRango, id_usuario], transaction: t });
 
-                // 3. Otorgar Medalla de Rango (101 o 102)
                 const idMedalla = nuevoRango.includes('Chunin') ? 101 : 102;
                 await db.query('INSERT IGNORE INTO Usuarios_Insignias (id_usuario, id_insignia, fecha_otorgada) VALUES (?, ?, NOW())',
                     { replacements: [id_usuario, idMedalla], transaction: t });
@@ -261,7 +273,7 @@ exports.finalizarModulo = async (req, res) => {
         }
 
         await t.commit();
-        
+
         res.json({
             success: true,
             ascendio: ascendio,
@@ -289,7 +301,7 @@ exports.guardarDiagnostico = async (req, res) => {
         const rango = mapa[resIA.data.nivel_id] || 'Genin (Iniciado)';
 
         // 2. Actualizar rango oficial
-        await db.query('UPDATE usuarios SET rango = ?, rango_actual = ? WHERE id_usuario = ?', 
+        await db.query('UPDATE usuarios SET rango = ?, rango_actual = ? WHERE id_usuario = ?',
             { replacements: [rango, rango, id_usuario], transaction: t });
 
         // 🚩 3. LÓGICA DE MEDALLAS DE RANGO Y CONVALIDACIÓN
@@ -299,12 +311,18 @@ exports.guardarDiagnostico = async (req, res) => {
         if (rango.includes('Chunin')) {
             nivelesAConvalidar = ['Genin (Iniciado)', 'Bajo'];
             medallasDeRango = [101]; // Medalla Chunin
-        } 
+        }
         else if (rango.includes('Jonin')) {
             nivelesAConvalidar = ['Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio'];
             medallasDeRango = [101, 102]; // Medalla Chunin y Medalla Jonin
+        }else if (rango.includes('Kage')) {
+            nivelesAConvalidar = [
+                'Genin (Iniciado)', 'Bajo', 
+                'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 
+                'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto'
+            ];
+            medallasDeRango = [101, 102, 103]; // Todas las medallas de rango
         }
-
         // A. Convalidar Módulos y sus insignias
         if (nivelesAConvalidar.length > 0) {
             const modulosConvalidados = await db.query(
@@ -341,13 +359,13 @@ exports.guardarDiagnostico = async (req, res) => {
         }
 
         // 4. Registro histórico del diagnóstico
-        const nuevo = await Diagnostico.create({ 
-            id_usuario, puntaje_obtenido: puntaje, nivel_asignado: rango, fecha_realizacion: new Date() 
+        const nuevo = await Diagnostico.create({
+            id_usuario, puntaje_obtenido: puntaje, nivel_asignado: rango, fecha_realizacion: new Date()
         }, { transaction: t });
 
         await t.commit();
         res.status(201).json(nuevo);
-        
+
     } catch (e) {
         if (t) await t.rollback();
         console.error("❌ Error en Convalidación de Rango:", e.message);
@@ -361,65 +379,83 @@ exports.obtenerDashboard = async (req, res) => {
         const id_usuario = extraerIdUsuario(req);
         if (!id_usuario) return res.status(401).json({ mensaje: "No autorizado" });
 
-        // 🚩 1. CONSULTA DE PERFIL Y ESTADO (Rango y Racha)
+        // 🚩 1. CONSULTA BLINDADA CONTRA ZONAS HORARIAS
+        // Usamos DATE_FORMAT en SQL para que MySQL nos dé la fecha estricta como texto (YYYY-MM-DD)
         const [usuarioDB] = await db.query(
-            'SELECT rango, rango_actual, ultima_conexion, racha_dias FROM usuarios WHERE id_usuario = ?',
+            `SELECT 
+                rango, 
+                rango_actual, 
+                DATE_FORMAT(ultima_conexion, '%Y-%m-%d') as fecha_ultima_str, 
+                racha_dias 
+             FROM usuarios 
+             WHERE id_usuario = ?`,
             { replacements: [id_usuario], type: db.QueryTypes.SELECT }
         );
 
         if (!usuarioDB) return res.status(404).json({ mensaje: 'Ninja no hallado' });
 
         const nivelIA = usuarioDB.rango || usuarioDB.rango_actual || 'Genin (Iniciado)';
-        
-        // 🚩 2. MOTOR DE RACHAS BLINDADO (Anti-Bucle)
-        const hoy = new Date();
-        const utcHoy = Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
-        
+
+        // 🚩 2. MOTOR DE RACHAS (Anti-Bucle y Anti-React Strict Mode)
+        // Sacamos la fecha actual estricta de Colombia
+        const hoyStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+
         let rachaActual = usuarioDB.racha_dias || 0;
         let necesitaActualizar = false;
 
-        if (!usuarioDB.ultima_conexion) {
+        if (!usuarioDB.fecha_ultima_str) {
             rachaActual = 1;
             necesitaActualizar = true;
         } else {
-            const ultimaConexion = new Date(usuarioDB.ultima_conexion);
-            const utcUltima = Date.UTC(ultimaConexion.getFullYear(), ultimaConexion.getMonth(), ultimaConexion.getDate());
-            
-            const diferenciaDias = Math.floor((utcHoy - utcUltima) / (1000 * 60 * 60 * 24));
+            const ultimaStr = usuarioDB.fecha_ultima_str; // Ej: '2026-04-02'
 
-            if (diferenciaDias === 1) {
-                // Es el día siguiente exacto: Aumentar racha
-                rachaActual += 1;
-                necesitaActualizar = true;
-            } else if (diferenciaDias > 1) {
-                // Pasó más de un día: Reiniciar racha
-                rachaActual = 1;
+            // Solo entramos a la matemática si REALMENTE cambió el día
+            if (hoyStr !== ultimaStr) {
+                // Forzamos ambas fechas a UTC 00:00 para que la resta de días sea exacta
+                const utcHoy = new Date(`${hoyStr}T00:00:00Z`);
+                const utcUltima = new Date(`${ultimaStr}T00:00:00Z`);
+
+                const diferenciaDias = Math.round((utcHoy - utcUltima) / (1000 * 60 * 60 * 24));
+
+                if (diferenciaDias === 1) {
+                    rachaActual += 1;
+                } else if (diferenciaDias > 1) {
+                    rachaActual = 1; // Perdió la racha, vuelve a empezar
+                }
+
                 necesitaActualizar = true;
             }
-            // SI ES 0: No se hace nada, ya entró hoy. Esto evita el incremento doble.
         }
 
         if (necesitaActualizar) {
-            const fechaSQL = hoy.toISOString().split('T')[0]; 
+            // Generamos la hora exacta de Colombia y la enviamos como String a MySQL
+            // Así evitamos que Sequelize la guarde con UTC erróneo
+            const fechaActual = new Date();
+            const offsetBogota = -5 * 60 * 60 * 1000; // -5 horas en milisegundos
+            const localBogota = new Date(fechaActual.getTime() + offsetBogota);
+            const sqlDateTime = localBogota.toISOString().slice(0, 19).replace('T', ' '); // "2026-04-02 11:52:00"
+
             await db.query(
                 'UPDATE usuarios SET racha_dias = ?, ultima_conexion = ? WHERE id_usuario = ?',
-                { replacements: [rachaActual, fechaSQL, id_usuario] }
+                { replacements: [rachaActual, sqlDateTime, id_usuario] }
             );
         }
 
         // 🚩 3. CARGA PARALELA DE DATOS (Rendimiento Ninja)
         const [diag, modulos, todasInsignias, insigniasGanadas] = await Promise.all([
             db.query('SELECT puntaje_obtenido FROM diagnostico WHERE id_usuario = ? ORDER BY fecha_realizacion DESC LIMIT 1', { replacements: [id_usuario], type: db.QueryTypes.SELECT }),
-            Modulo.findAll({ 
-                where: { 
-                    nivel: { 
-                        [Op.in]: nivelIA.includes('Jonin') 
+            Modulo.findAll({
+                where: {
+                    nivel: {
+                        // NOTA: Asegúrate de tener importado 'Op' de Sequelize al inicio de tu archivo: 
+                        // const { Op } = require('sequelize');
+                        [Op.in]: nivelIA.includes('Jonin')
                             ? ['Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto']
                             : nivelIA.includes('Chunin')
                                 ? ['Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio']
                                 : ['Genin (Iniciado)', 'Bajo']
-                    } 
-                }, 
+                    }
+                },
                 raw: true,
                 order: [[db.literal("FIELD(nivel, 'Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto')")], ['id_modulo', 'ASC']]
             }),
@@ -431,7 +467,7 @@ exports.obtenerDashboard = async (req, res) => {
 
         // 🚩 4. PROCESAR PROGRESO POR MÓDULO
         const rutaConProgreso = await Promise.all(modulos.map(async (m) => {
-            const p = await ProgresoEstudiante.findOne({ 
+            const p = await ProgresoEstudiante.findOne({
                 where: { id_usuario, id_modulo: m.id_modulo },
                 order: [['porcentaje_avance', 'DESC']],
                 raw: true
@@ -441,21 +477,21 @@ exports.obtenerDashboard = async (req, res) => {
 
         // 🚩 5. RESPUESTA FINAL CONSOLIDADA
         res.json({
-            estadisticas: { 
-                rango_actual: nivelIA, 
+            estadisticas: {
+                rango_actual: nivelIA,
                 puntaje: puntajeInicial,
-                modulos_completados: rutaConProgreso.filter(m => parseInt(m.porcentaje_avance) === 100).length, 
+                modulos_completados: rutaConProgreso.filter(m => parseInt(m.porcentaje_avance) === 100).length,
                 total_misiones: rutaConProgreso.length,
                 racha_dias: rachaActual
             },
-            ruta_ia_asignada: rutaConProgreso, 
-            todas_insignias: todasInsignias, 
+            ruta_ia_asignada: rutaConProgreso,
+            todas_insignias: todasInsignias,
             insignias_obtenidas: insigniasGanadas
         });
 
-    } catch (e) { 
+    } catch (e) {
         console.error("Dashboard Error:", e);
-        res.status(500).json({ mensaje: 'Error motor dashboard' }); 
+        res.status(500).json({ mensaje: 'Error motor dashboard' });
     }
 };
 // 🚩 CORRECCIÓN 3: Actualizar progreso con protección de "Piso de Cristal"
@@ -476,9 +512,9 @@ exports.actualizarProgreso = async (req, res) => {
         `, { replacements: [id_usuario, id_modulo, porcentaje, porcentaje, porcentaje] });
 
         res.json({ mensaje: 'Chakra sincronizado' });
-    } catch (e) { 
+    } catch (e) {
         console.error("Error progreso:", e);
-        res.status(500).json({ mensaje: 'Error progreso' }); 
+        res.status(500).json({ mensaje: 'Error progreso' });
     }
 };
 
@@ -623,7 +659,7 @@ exports.obtenerLogrosEstudiante = async (req, res) => {
 exports.obtenerAnaliticaErrores = async (req, res) => {
     try {
         const id_usuario = extraerIdUsuario(req);
-        
+
         // Consultamos la cuenta de errores agrupada por el nombre del módulo
         const estadisticas = await db.query(`
             SELECT 
@@ -639,8 +675,8 @@ exports.obtenerAnaliticaErrores = async (req, res) => {
         `, { replacements: [id_usuario], type: db.QueryTypes.SELECT });
 
         // Determinamos cuál es el "punto débil" (el tema con más de 3 errores, por ejemplo)
-        const puntoDebil = estadisticas.length > 0 && estadisticas[0].total_fallos >= 3 
-            ? estadisticas[0] 
+        const puntoDebil = estadisticas.length > 0 && estadisticas[0].total_fallos >= 3
+            ? estadisticas[0]
             : null;
 
         res.json({
@@ -661,27 +697,27 @@ exports.obtenerAnaliticaErrores = async (req, res) => {
 exports.consultarOraculo = async (req, res) => {
     try {
         const { id_pregunta, mensaje_estudiante } = req.body;
-        
+
         // 1. Buscamos el contexto del ejercicio en la base de datos
         const preguntaDB = await Ejercicio.findByPk(id_pregunta);
         if (!preguntaDB) return res.status(404).json({ error: "Pergamino no encontrado" });
 
-        // 2. Construimos el Prompt blindado (Ingeniería de Prompts)
+        // 2. Construimos el Prompt (Ingeniería de Prompts)
         const prompt = `
-        Eres un sabio maestro de matemáticas. Tu tarea es guiar a tu estudiante.
+        Eres un maestro de matemáticas. Tu tarea es guiar a tu estudiante academicamente.
         El estudiante está intentando resolver el siguiente problema: "${preguntaDB.pregunta}".
         
         El estudiante te pregunta lo siguiente: "${mensaje_estudiante}"
 
         REGLAS ESTRICTAS QUE DEBES CUMPLIR:
         1. NUNCA des la respuesta final ni la solución directa del ejercicio.
-        2. Actúa como un guía socrático: dale pistas, explícale el concepto matemático (como límites, derivadas, despejes, etc.) o hazle una pregunta que lo haga pensar.
-        3. Mantén tu respuesta breve (máximo 2 o 3 párrafos cortos).
+        2. Actúa como un guía: dale pistas, explícale el concepto matemático (como límites, derivadas, despejes, etc.) o hazle una pregunta que lo haga pensar.
+        3. Mantén tu respuesta breve (máximo 2 o 3 párrafos cortos) y usa lenguaje academico.
         4. Usa un tono motivador de maestro ninja.
         5. NO USES FORMATO LaTeX ni signos de peso ($) para las matemáticas. Escribe las fórmulas de manera simple y en texto plano (ej: f(x) = x^2).
         `;
 
-        // 3. Invocamos a Gemini 2.0 Flash
+        // 3. Invocamos a Gemini 2.5 Flash-lite
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
         const result = await model.generateContent(prompt);
         const respuestaOraculo = result.response.text();
@@ -691,8 +727,8 @@ exports.consultarOraculo = async (req, res) => {
     } catch (e) {
         console.error("❌ Error en el Oráculo IA:", e);
         if (e.message.includes('429')) {
-            return res.status(429).json({ 
-                respuesta: "Mi chakra está agotado en este momento, joven ninja. Intenta canalizar tu energía y pregúntame de nuevo en unos segundos." 
+            return res.status(429).json({
+                respuesta: "Mi chakra está agotado en este momento, joven ninja. Intenta canalizar tu energía y pregúntame de nuevo en unos segundos."
             });
         }
         res.status(500).json({ respuesta: "El enlace telepático con el Oráculo se ha roto. Sigue tu instinto ninja." });
