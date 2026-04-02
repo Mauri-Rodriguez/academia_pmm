@@ -7,17 +7,27 @@ const ForoComunidad = () => {
     const navigate = useNavigate();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
+    
+    // Estados para MODAL DE CREACIÓN
     const [mostrarModal, setMostrarModal] = useState(false);
     const [nuevaMision, setNuevaMision] = useState({ titulo: '', contenido: '' });
     const [archivo, setArchivo] = useState(null);
+
+    // Estados para MODAL DE EDICIÓN DE POSTS
+    const [mostrarModalEdicion, setMostrarModalEdicion] = useState(false);
+    const [misionAEditar, setMisionAEditar] = useState({ id_post: null, titulo: '', contenido: '' });
+    const [archivoEdicion, setArchivoEdicion] = useState(null);
 
     const [misionSeleccionada, setMisionSeleccionada] = useState(null);
     const [comentarios, setComentarios] = useState([]);
     const [nuevoComentario, setNuevoComentario] = useState("");
     const [enviandoComentario, setEnviandoComentario] = useState(false);
 
+    // 🚩 NUEVOS ESTADOS: EDICIÓN EN LÍNEA DE COMENTARIOS
+    const [comentarioEditando, setComentarioEditando] = useState(null);
+    const [textoComentarioEditado, setTextoComentarioEditado] = useState("");
+
     const [usuarioActualId, setUsuarioActualId] = useState(null);
-    
     const fotoUsuarioActual = localStorage.getItem('user_avatar') || null;
 
     const generarColorAvatar = (nombre = "Anónimo") => {
@@ -26,7 +36,6 @@ const ForoComunidad = () => {
             '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'
         ];
         let hash = 0;
-        // Blindaje para el generador de color
         const nombreSeguro = String(nombre || "Anónimo");
         for (let i = 0; i < nombreSeguro.length; i++) {
             hash = nombreSeguro.charCodeAt(i) + ((hash << 5) - hash);
@@ -83,6 +92,32 @@ const ForoComunidad = () => {
         } catch (err) { alert("Error al publicar."); }
     };
 
+    const abrirEdicion = (post) => {
+        setMisionAEditar({
+            id_post: post.id_post,
+            titulo: post.titulo,
+            contenido: post.contenido
+        });
+        setArchivoEdicion(null);
+        setMostrarModalEdicion(true);
+    };
+
+    const guardarEdicion = async (e) => {
+        e.preventDefault();
+        if (!misionAEditar.titulo || !misionAEditar.contenido) return;
+        
+        const formData = new FormData();
+        formData.append('titulo', misionAEditar.titulo);
+        formData.append('contenido', misionAEditar.contenido);
+        if (archivoEdicion) formData.append('imagen', archivoEdicion);
+
+        try {
+            await api.put(`/estudiante/foro/post/${misionAEditar.id_post}`, formData);
+            setMostrarModalEdicion(false);
+            cargarForo();
+        } catch (err) { alert("Error al editar."); }
+    };
+
     const eliminarMision = async (id_post) => {
         if (!window.confirm("¿Eliminar esta misión permanentemente?")) return;
         try {
@@ -105,6 +140,20 @@ const ForoComunidad = () => {
             cargarComentarios(misionSeleccionada.id_post);
         } catch (err) { alert("Error al comentar."); } 
         finally { setEnviandoComentario(false); }
+    };
+
+    // 🚩 NUEVA FUNCIÓN: GUARDAR EDICIÓN DEL COMENTARIO
+    const guardarEdicionComentario = async (id_comentario) => {
+        if (!textoComentarioEditado.trim()) return;
+        try {
+            await api.put(`/estudiante/foro/comentario/${id_comentario}`, {
+                comentario: textoComentarioEditado
+            });
+            setComentarioEditando(null);
+            cargarComentarios(misionSeleccionada.id_post);
+        } catch (err) { 
+            alert("Error al editar el comentario."); 
+        }
     };
 
     const eliminarComentario = async (id_comentario) => {
@@ -159,7 +208,7 @@ const ForoComunidad = () => {
                             <motion.div 
                                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                                 key={post.id_post} 
-                                className="bg-[#0E121C] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 transition-colors shadow-xl"
+                                className="bg-[#0E121C] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 transition-colors shadow-xl relative"
                             >
                                 <div className="p-4 flex justify-between items-start">
                                     <div className="flex items-center gap-3">
@@ -170,7 +219,6 @@ const ForoComunidad = () => {
                                             {mostrarAvatar ? (
                                                 <img src={fotoUsuarioActual} alt={post.autor} className="w-full h-full object-cover" />
                                             ) : (
-                                                /* 🛡️ CORRECCIÓN AQUÍ: Optional chaining + Fallback */
                                                 post.autor?.charAt(0).toUpperCase() || "N"
                                             )}
                                         </div>
@@ -179,12 +227,28 @@ const ForoComunidad = () => {
                                             <p className="text-[10px] text-slate-500 font-medium italic">{new Date(post.fecha_creacion).toLocaleString()}</p>
                                         </div>
                                     </div>
+
                                     {esMio && (
-                                        <button onClick={() => eliminarMision(post.id_post)} className="text-slate-600 hover:text-red-500 p-1 transition-colors">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
+                                        <div className="flex gap-2">
+                                            <button 
+                                                onClick={() => abrirEdicion(post)} 
+                                                className="text-slate-500 hover:text-shinobi-gold p-1 transition-colors"
+                                                title="Editar Pergamino"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                            </button>
+                                            <button 
+                                                onClick={() => eliminarMision(post.id_post)} 
+                                                className="text-slate-600 hover:text-red-500 p-1 transition-colors"
+                                                title="Eliminar Pergamino"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
 
@@ -236,7 +300,6 @@ const ForoComunidad = () => {
                                 {Number(misionSeleccionada.id_usuario) === Number(usuarioActualId) && fotoUsuarioActual ? (
                                     <img src={fotoUsuarioActual} alt={misionSeleccionada.autor} className="w-full h-full object-cover" />
                                 ) : (
-                                    /* 🛡️ CORRECCIÓN AQUÍ: Optional chaining + Fallback */
                                     misionSeleccionada.autor?.charAt(0).toUpperCase() || "N"
                                 )}
                             </div>
@@ -271,22 +334,72 @@ const ForoComunidad = () => {
                                                 {mostrarAvatarComentario ? (
                                                     <img src={fotoUsuarioActual} alt={c.autor} className="w-full h-full object-cover" />
                                                 ) : (
-                                                    /* 🛡️ CORRECCIÓN AQUÍ: Optional chaining + Fallback */
                                                     c.autor?.charAt(0).toUpperCase() || "N"
                                                 )}
                                             </div>
+                                            
+                                            {/* 🚩 CONTENEDOR DEL COMENTARIO CON LÓGICA DE EDICIÓN */}
                                             <div className="bg-[#1A2131] p-4 rounded-2xl rounded-tl-none flex-1 relative group">
                                                 <div className="flex justify-between items-center mb-1">
                                                     <span className="text-xs font-black text-shinobi-gold">{c.autor || "Ninja"}</span>
+                                                    
                                                     {esMiComentario && (
-                                                        <button onClick={() => eliminarComentario(c.id_comentario)} className="text-red-500/0 group-hover:text-red-500/50 transition-all p-1">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                                                            </svg>
-                                                        </button>
+                                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button 
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setComentarioEditando(c.id_comentario);
+                                                                    setTextoComentarioEditado(c.comentario);
+                                                                }} 
+                                                                className="text-slate-500 hover:text-[#3B82F6] transition-all p-1"
+                                                                title="Editar respuesta"
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                                </svg>
+                                                            </button>
+                                                            <button 
+                                                                type="button"
+                                                                onClick={() => eliminarComentario(c.id_comentario)} 
+                                                                className="text-slate-500 hover:text-red-500 transition-all p-1"
+                                                                title="Eliminar respuesta"
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
                                                     )}
                                                 </div>
-                                                <p className="text-sm text-slate-300 leading-snug">{c.comentario}</p>
+
+                                                {/* 🚩 RENDER CONDICIONAL: Texto normal o Textarea de edición */}
+                                                {comentarioEditando === c.id_comentario ? (
+                                                    <div className="mt-2 flex flex-col gap-2">
+                                                        <textarea
+                                                            className="w-full bg-black/40 border border-[#3B82F6]/50 rounded-lg p-2 text-sm text-white outline-none focus:border-[#3B82F6] resize-none h-20"
+                                                            value={textoComentarioEditado}
+                                                            onChange={(e) => setTextoComentarioEditado(e.target.value)}
+                                                        />
+                                                        <div className="flex justify-end gap-3">
+                                                            <button 
+                                                                type="button"
+                                                                onClick={() => setComentarioEditando(null)} 
+                                                                className="text-[10px] text-slate-400 hover:text-white uppercase font-bold"
+                                                            >
+                                                                Cancelar
+                                                            </button>
+                                                            <button 
+                                                                type="button"
+                                                                onClick={() => guardarEdicionComentario(c.id_comentario)} 
+                                                                className="text-[10px] bg-[#3B82F6] text-white px-4 py-1.5 rounded-md hover:bg-white hover:text-[#3B82F6] uppercase font-black transition-colors"
+                                                            >
+                                                                Guardar
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-sm text-slate-300 leading-snug whitespace-pre-wrap">{c.comentario}</p>
+                                                )}
                                             </div>
                                         </div>
                                     );
@@ -325,6 +438,7 @@ const ForoComunidad = () => {
             )}
 
             <AnimatePresence>
+                {/* MODAL DE CREACIÓN ORIGINAL */}
                 {mostrarModal && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMostrarModal(false)} className="absolute inset-0" />
@@ -350,6 +464,49 @@ const ForoComunidad = () => {
                                     <div className="flex gap-3">
                                         <button type="button" onClick={() => setMostrarModal(false)} className="flex-1 bg-slate-800 text-white py-4 rounded-2xl font-bold text-[10px] uppercase transition-all hover:bg-slate-700">Cancelar</button>
                                         <button type="submit" className="flex-2 bg-shinobi-gold text-black px-10 py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-shinobi-gold/10 hover:bg-white transition-all">Publicar Pergamino</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.form>
+                    </div>
+                )}
+
+                {/* MODAL DE EDICIÓN */}
+                {mostrarModalEdicion && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMostrarModalEdicion(false)} className="absolute inset-0" />
+                        <motion.form 
+                            initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }}
+                            onSubmit={guardarEdicion}
+                            className="bg-[#0E121C] border border-[#3B82F6]/30 rounded-[2.5rem] p-8 max-w-lg w-full relative z-10 shadow-[0_0_50px_rgba(59,130,246,0.1)]"
+                        >
+                            <div className="text-center mb-8">
+                                <h2 className="text-white font-scholar text-2xl tracking-tighter uppercase italic">Reescribir <span className="text-[#3B82F6]">Pergamino</span></h2>
+                                <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">Mejora tu solicitud de ayuda</p>
+                            </div>
+                            
+                            <div className="space-y-5">
+                                <input 
+                                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-[#3B82F6] transition-all" 
+                                    placeholder="Título de la duda..." 
+                                    value={misionAEditar.titulo} 
+                                    onChange={(e) => setMisionAEditar({...misionAEditar, titulo: e.target.value})} 
+                                />
+                                <textarea 
+                                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none h-36 resize-none focus:border-[#3B82F6] transition-all" 
+                                    placeholder="Describe el problema matemático detalladamente..." 
+                                    value={misionAEditar.contenido} 
+                                    onChange={(e) => setMisionAEditar({...misionAEditar, contenido: e.target.value})} 
+                                />
+                                
+                                <div className="flex flex-col gap-4">
+                                    <label htmlFor="file-upload-edit" className="w-full cursor-pointer bg-white/5 border border-dashed border-white/20 rounded-2xl p-4 text-center text-[10px] text-slate-400 hover:border-[#3B82F6] hover:text-[#3B82F6] transition-all">
+                                        {archivoEdicion ? `✅ ${archivoEdicion.name}` : "📸 ACTUALIZAR EVIDENCIA (OPCIONAL)"}
+                                        <input id="file-upload-edit" type="file" className="hidden" onChange={(e) => setArchivoEdicion(e.target.files[0])} />
+                                    </label>
+                                    <div className="flex gap-3">
+                                        <button type="button" onClick={() => setMostrarModalEdicion(false)} className="flex-1 bg-slate-800 text-white py-4 rounded-2xl font-bold text-[10px] uppercase transition-all hover:bg-slate-700">Cancelar</button>
+                                        <button type="submit" className="flex-2 bg-[#3B82F6] text-white px-10 py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-[#3B82F6]/10 hover:bg-white hover:text-[#3B82F6] transition-all">Guardar Cambios</button>
                                     </div>
                                 </div>
                             </div>

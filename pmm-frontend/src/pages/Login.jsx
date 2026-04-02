@@ -22,33 +22,29 @@ const Login = () => {
 
     // 🚩 FUNCIÓN MAESTRA: Sincroniza la identidad en toda la aldea
 // 🚩 FUNCIÓN MAESTRA: Sincroniza la identidad en toda la aldea
-    const guardarSesion = (token, usuario, requiereDiagnostico = null) => {
-        localStorage.clear(); 
-        
-        localStorage.setItem('token', token); 
-        localStorage.setItem('rol', usuario.rol);
-        localStorage.setItem('user_name', usuario.nombre_completo);
+// 🚩 FUNCIÓN MAESTRA BLINDADA
+const guardarSesion = (token, usuario, requiereDiagnostico) => {
+    localStorage.clear(); 
+    localStorage.setItem('token', token); 
+    localStorage.setItem('rol', usuario.rol);
+    localStorage.setItem('user_name', usuario.nombre_completo);
 
-        if (usuario.rol === 'docente') {
-            navigate('/docente/dashboard');
-            return;
-        } 
-        
-        // 🛡️ DECISIÓN BLINDADA:
-        // 1. Priorizamos la bandera del backend (Esto salva el Google Login)
-        // 2. Fallback: Si la bandera es null, revisamos si el usuario no tiene rango.
-        const necesitaExamen = requiereDiagnostico !== null 
-            ? requiereDiagnostico 
-            : !usuario.rango;
+    if (usuario.rol === 'docente') {
+        navigate('/docente/dashboard');
+        return;
+    } 
 
-        if (necesitaExamen) {
-            console.log("🥷 Nuevo recluta detectado. Redirigiendo a Diagnóstico...");
-            navigate('/estudiante/diagnostico');
-        } else {
-            console.log("🔥 Guerrero veterano. Entrando al Dashboard...");
-            navigate('/estudiante/dashboard');
-        }
-    };
+    // 🛡️ EL CANDADO DEFINITIVO
+    // Si el backend nos dice explícitamente que NO requiere diagnóstico,
+    // ignoramos cualquier otra validación y vamos al Dashboard.
+    if (requiereDiagnostico === false) {
+        console.log("🔥 Rango detectado en DB. Saltando diagnóstico...");
+        navigate('/estudiante/dashboard');
+    } else {
+        console.log("🥷 Sin registros previos. Iniciando diagnóstico...");
+        navigate('/estudiante/diagnostico');
+    }
+};
 
 const handleGoogleSuccess = async (credentialResponse) => {
         setLoading(true);

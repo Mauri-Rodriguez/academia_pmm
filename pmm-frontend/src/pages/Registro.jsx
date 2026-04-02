@@ -15,8 +15,15 @@ const Registro = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    // 🛡️ DOMINIOS PERMITIDOS (Limpios y para producción)
-    const DOMINIOS_PERMITIDOS = ['estudiante.uniajc.edu.co', 'gmail.com', 'outlook.com', 'hotmail.com'];
+    // 🛡️ DOMINIOS PERMITIDOS ACTUALIZADOS (Incluye Profesores y Administrativos UNIAJC)
+    const DOMINIOS_PERMITIDOS = [
+        'estudiante.uniajc.edu.co', 
+        'profesores.uniajc.edu.co', // 👈 Nuevo: Senseis
+        'admon.uniajc.edu.co',      // 👈 Nuevo: Administrativos
+        'gmail.com', 
+        'outlook.com', 
+        'hotmail.com'
+    ];
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -35,7 +42,7 @@ const Registro = () => {
         const dominio = formData.correo.split('@')[1]?.toLowerCase();
         if (!DOMINIOS_PERMITIDOS.includes(dominio)) {
             return setMensaje({ 
-                texto: `Dominio no autorizado. Solo se permiten: ${DOMINIOS_PERMITIDOS.join(', ')}`, 
+                texto: `Dominio no autorizado. Usa tu correo institucional o personal (Gmail/Outlook/Hotmail).`, 
                 tipo: 'error' 
             });
         }
@@ -51,16 +58,21 @@ const Registro = () => {
         setLoading(true);
 
         try {
+            // Enviamos la petición al backend. 
+            // 🚩 RECUERDA: El backend ignorará el "rol" que envíes y lo asignará según el dominio.
             const res = await api.post('/auth/register', {
                 nombre_completo: formData.nombre_completo,
                 correo: formData.correo,
-                password: formData.password,
-                rol: formData.rol 
+                password: formData.password
             });
 
-            setMensaje({ texto: '¡Registro exitoso! Preparando tu entrada al dojo...', tipo: 'success' });
+            setMensaje({ 
+                texto: '¡Registro exitoso! Revisa tu correo para activar tu cuenta y entrar al dojo.', 
+                tipo: 'success' 
+            });
             
-            setTimeout(() => navigate('/'), 2000);
+            // Esperamos un poco más para que el usuario lea el mensaje de ir al correo
+            setTimeout(() => navigate('/'), 4000);
         } catch (err) {
             console.error("Error en registro:", err);
             setMensaje({ 
@@ -90,7 +102,7 @@ const Registro = () => {
                 <div className="md:w-1/2 hidden md:flex flex-col items-center justify-center p-4 text-center">
                     <CodeMascotEmblem />
                     <p className="mt-6 font-scholar text-[10px] text-shinobi-gold uppercase tracking-[0.3em] opacity-60">
-                        Inscripción en la Academia
+                        Inscripción en la Academia PMM
                     </p>
                 </div>
                 
@@ -103,7 +115,7 @@ const Registro = () => {
                             </h2>
                             <div className="h-px bg-shinobi-gold/30 w-3/4 mx-auto my-2"></div>
                             <p className="font-modern text-[10px] text-slate-500 uppercase tracking-widest mt-2">
-                                Únete a PMM Interactivo
+                                Identidad Institucional Detectada
                             </p>
                         </div>
 
@@ -127,12 +139,12 @@ const Registro = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block font-scholar text-[11px] text-shinobi-dark mb-1 uppercase tracking-wider">Correo Electrónico</label>
+                                <label className="block font-scholar text-[11px] text-shinobi-dark mb-1 uppercase tracking-wider">Correo Institucional o Personal</label>
                                 <input 
                                     name="correo" required type="email" 
                                     value={formData.correo} onChange={handleChange}
                                     className="w-full bg-transparent border-b-2 border-shinobi-dark/20 p-2 focus:border-shinobi-orange outline-none text-shinobi-dark font-modern transition-all"
-                                    placeholder="ninja@academia.edu"
+                                    placeholder="ejemplo@profesores.uniajc.edu.co"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
