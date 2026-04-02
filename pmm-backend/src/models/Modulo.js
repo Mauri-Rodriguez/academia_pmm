@@ -1,7 +1,6 @@
 // ============================================================================
 // Archivo: src/models/Modulo.js
 // Propósito: Representación de la tabla 'Modulos' en MySQL.
-//            Contiene los temas que la IA asignará en la ruta de aprendizaje.
 // ============================================================================
 
 const { DataTypes } = require('sequelize');
@@ -15,6 +14,7 @@ const Modulo = sequelize.define('Modulo', {
     },
     nombre_modulo: {
         type: DataTypes.STRING,
+        allowLength: { args: [3, 100], msg: "El nombre debe ser descriptivo." },
         allowNull: false
     },
     descripcion: {
@@ -22,8 +22,15 @@ const Modulo = sequelize.define('Modulo', {
         allowNull: true
     },
     nivel: {
-        type: DataTypes.STRING, // Genin, Chunin o Jonin
-        allowNull: false
+        type: DataTypes.STRING, 
+        allowNull: false,
+        // 🚩 TIP SENIOR: Aseguramos que solo entren los rangos de la Aldea
+        validate: {
+            isIn: {
+                args: [['Genin (Iniciado)', 'Chunin (Guerrero)', 'Jonin (Maestro)', 'Bajo', 'Intermedio', 'Alto']],
+                msg: "El nivel debe ser un rango válido de la Aldea Digital."
+            }
+        }
     }
 }, {
     tableName: 'Modulos',

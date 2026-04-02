@@ -9,7 +9,7 @@ const authRoutes = require('./routes/authRoutes'); // IMPORTAMOS LAS RUTAS
 const estudianteRoutes = require('./routes/estudianteRoutes');
 const ejercicioRoutes = require('./routes/ejercicioRoutes');
 const docenteRoutes = require('./routes/docenteRoutes');
-
+const progresoRoutes = require('./routes/progresoRoutes'); // 👈 Agrega esta línea
 
 const app = express();
 
@@ -29,7 +29,7 @@ app.use('/api/diagnostico', diagnosticoRoutes); // CONECTAMOS EL MÓDULO DE DIAG
 app.use('/api/estudiante', estudianteRoutes); // CONECTAMOS EL MÓDULO DE ESTUDIANTE
 app.use('/api/docente', docenteRoutes);
 app.use('/uploads', express.static('public/uploads'));
-
+app.use('/api/progreso', progresoRoutes); // 👈 Activa la ruta en la API
 
 
 

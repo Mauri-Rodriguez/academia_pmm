@@ -1,111 +1,181 @@
 /**
  * ============================================================================
  * Archivo: src/controllers/progresoController.js
- * Propósito: Gestión lógica del avance estudiantil y logros (Gamificación).
- * Requerimientos: RF-08, RF-07, HDU-07.
+ * Propósito: Gestión lógica del avance estudiantil e insignias instantáneas.
  * ============================================================================
  */
 
+const sequelize = require('../config/database'); 
 const ProgresoEstudiante = require('../models/ProgresoEstudiante');
-const sequelize = require('../config/database'); // Para transacciones y consultas crudas
+const ResultadoModulo = require('../models/ResultadoModulo');
+const Modulo = require('../models/Modulo');
+const Diagnostico = require('../models/Diagnostico');
+
+const MAPA_NIVELES = {
+    'Genin (Iniciado)': { 
+        siguienteNivel: 'Chunin (Intermedio)', 
+        insigniaRangoId: 101, 
+        mensaje: '¡Has dominado los conceptos básicos! Asciendes al nivel Chunin.' 
+    },
+    'Chunin (Intermedio)': { 
+        siguienteNivel: 'Jonin (Avanzado)', 
+        insigniaRangoId: 102, 
+        mensaje: '¡Impresionante! Tus habilidades matemáticas han alcanzado el nivel Jonin.' 
+    },
+    'Jonin (Avanzado)': { 
+        siguienteNivel: 'Maestro Kage', 
+        insigniaRangoId: 103, 
+        mensaje: '¡Eres un maestro absoluto! Has completado el entrenamiento.' 
+    }
+};
 
 /**
- * Actualiza el progreso de un módulo e intenta otorgar insignias si se completa.
- * Sigue el flujo de la Figura 4 de la monografía.
+ * Actualiza el progreso parcial.
  */
 exports.actualizarProgreso = async (req, res) => {
-    // Iniciamos una transacción para asegurar la integridad entre progreso e insignias
     const t = await sequelize.transaction();
-
     try {
         const { id_modulo, porcentaje } = req.body;
-        const id_usuario = req.user.id_usuario || req.user.id; // Obtenido del token JWT
+        const id_usuario = req.user.id_usuario || req.user.id;
 
-        if (id_modulo === undefined || porcentaje === undefined) {
-            return res.status(400).json({ error: "Datos incompletos para actualizar progreso" });
-        }
-
-        // 1. Buscar si existe un registro previo para este módulo y usuario [cite: 556]
         let progreso = await ProgresoEstudiante.findOne({
             where: { id_usuario, id_modulo },
             transaction: t
         });
 
         if (progreso) {
-            // Regla de negocio: El porcentaje solo sube, nunca baja (resiliencia)
-            if (porcentaje > progreso.porcentaje_avance) {
-                progreso.porcentaje_avance = porcentaje;
-            }
-            progreso.intentos_realizados += 1; // Incremento automático según RF-08 
+            if (porcentaje > progreso.porcentaje_avance) progreso.porcentaje_avance = porcentaje;
+            progreso.intentos_realizados += 1;
             progreso.ultima_actualizacion = new Date();
             await progreso.save({ transaction: t });
         } else {
-            // Si es la primera vez que entra al módulo, creamos el registro
             progreso = await ProgresoEstudiante.create({
-                id_usuario,
-                id_modulo,
-                porcentaje_avance: porcentaje,
-                intentos_realizados: 1,
-                ultima_actualizacion: new Date()
+                id_usuario, id_modulo, porcentaje_avance: porcentaje,
+                intentos_realizados: 1, ultima_actualizacion: new Date()
             }, { transaction: t });
         }
 
-        // 2. Lógica de Gamificación (RF-07): Otorgar insignia al llegar al 100% [cite: 438, 536]
-        let insigniaNueva = false;
-        if (porcentaje >= 100) {
-            // Asumimos que id_insignia corresponde al id_modulo para simplificar la asignación
-            const id_insignia = id_modulo;
-
-            // Verificamos si ya posee este logro en la tabla pivote Usuarios_Insignias [cite: 556]
-            const [yaExiste] = await sequelize.query(
-                'SELECT id_usuario FROM Usuarios_Insignias WHERE id_usuario = ? AND id_insignia = ?',
-                { replacements: [id_usuario, id_insignia], type: sequelize.QueryTypes.SELECT, transaction: t }
-            );
-
-            if (!yaExiste) {
-                await sequelize.query(
-                    'INSERT INTO Usuarios_Insignias (id_usuario, id_insignia, fecha_otorgada) VALUES (?, ?, NOW())',
-                    { replacements: [id_usuario, id_insignia], transaction: t }
-                );
-                insigniaNueva = true;
-            }
-        }
-
-        // Confirmamos la operación atómica
         await t.commit();
-
-        res.json({
-            success: true,
-            message: "Sincronización de chakra exitosa",
-            data: {
-                nuevoPorcentaje: progreso.porcentaje_avance,
-                intentos: progreso.intentos_realizados,
-                logroDesbloqueado: insigniaNueva
-            }
-        });
-
+        res.json({ success: true, data: progreso });
     } catch (error) {
-        // En caso de error, revertimos cualquier cambio en la base de datos
         if (t) await t.rollback();
-        console.error("❌ Error en actualizarProgreso:", error);
-        res.status(500).json({ error: "Falla en la persistencia del progreso" });
+        res.status(500).json({ error: "Falla en actualización" });
     }
 };
 
 /**
- * Obtiene el estado actual de un módulo para retomar la sesión (HDU-07).
+ * FINALIZAR MÓDULO + DESBLOQUEO DE INSIGNIA + EVALUAR ASCENSO.
+ */
+exports.finalizarModuloYEvaluarAscenso = async (req, res) => {
+    const t = await sequelize.transaction();
+    try {
+        const { id_modulo, puntaje_final } = req.body;
+        const id_usuario = req.user.id_usuario || req.user.id;
+
+        // 1. Registrar resultado del examen final
+        await ResultadoModulo.create({
+            id_usuario,
+            id_modulo,
+            puntaje_final,
+            fecha_finalizacion: new Date()
+        }, { transaction: t });
+
+        // 2. Obtener info del módulo
+        const moduloActual = await Modulo.findByPk(id_modulo, { transaction: t });
+        if (!moduloActual) {
+            await t.rollback();
+            return res.status(404).json({ error: "Módulo no identificado" });
+        }
+
+        // 🚩 NUEVO: RECOMPENSA INMEDIATA (Insignia del Módulo)
+        // Se asume que existe una insignia con el mismo ID del módulo o vinculada
+        await sequelize.query(
+            'INSERT IGNORE INTO Usuarios_Insignias (id_usuario, id_insignia, fecha_otorgada) VALUES (?, ?, NOW())',
+            { replacements: [id_usuario, id_modulo], transaction: t }
+        );
+
+        const nivelActual = moduloActual.nivel;
+
+        // 3. Auditoría para Ascenso de Rango
+        const modulosDelNivel = await Modulo.findAll({ 
+            where: { nivel: nivelActual },
+            attributes: ['id_modulo'],
+            transaction: t 
+        });
+        
+        const idsModulosNivel = modulosDelNivel.map(m => m.id_modulo);
+        const totalRequeridos = idsModulosNivel.length;
+
+        const completadosCount = await ResultadoModulo.count({
+            distinct: true,
+            col: 'id_modulo',
+            where: { id_usuario, id_modulo: idsModulosNivel },
+            transaction: t
+        });
+
+        let huboAscenso = false;
+        let datosAscenso = null;
+
+        // 4. Lógica de Subida de Rango
+        const configSiguiente = MAPA_NIVELES[nivelActual];
+
+        if (configSiguiente && completadosCount >= totalRequeridos) {
+            huboAscenso = true;
+
+            // Update Nivel en Diagnóstico
+            await Diagnostico.update(
+                { nivel_asignado: configSiguiente.siguienteNivel },
+                { where: { id_usuario }, transaction: t }
+            );
+
+            // Insertar Insignia de Rango (101, 102, etc)
+            await sequelize.query(
+                'INSERT IGNORE INTO Usuarios_Insignias (id_usuario, id_insignia, fecha_otorgada) VALUES (?, ?, NOW())',
+                { replacements: [id_usuario, configSiguiente.insigniaRangoId], transaction: t }
+            );
+
+            datosAscenso = {
+                nuevoNivel: configSiguiente.siguienteNivel,
+                mensaje: configSiguiente.mensaje,
+                insigniaId: configSiguiente.insigniaRangoId
+            };
+        }
+
+        await t.commit();
+        
+        console.log(`--- ✅ PROCESO COMPLETADO: Usuario ${id_usuario} ---`);
+        console.log(`> Insignia Módulo ${id_modulo}: OTORGADA`);
+        if(huboAscenso) console.log(`> ASCENSO A ${datosAscenso.nuevoNivel}: EXITOSO`);
+
+        res.status(200).json({
+            success: true,
+            mensaje: huboAscenso ? '¡Ascenso de Rango!' : '¡Misión cumplida e insignia obtenida!',
+            ascenso: huboAscenso,
+            detallesAscenso: datosAscenso
+        });
+
+    } catch (error) {
+        if (t) await t.rollback();
+        console.error("🚨 Error Crítico:", error.stack);
+        res.status(500).json({ error: "Falla en el registro de méritos ninja" });
+    }
+};
+
+/**
+ * Recupera el estado de un módulo específico para un usuario.
  */
 exports.obtenerEstadoModulo = async (req, res) => {
     try {
         const { id_modulo } = req.params;
         const id_usuario = req.user.id_usuario || req.user.id;
-
-        const registro = await ProgresoEstudiante.findOne({
-            where: { id_usuario, id_modulo }
+        
+        const registro = await ProgresoEstudiante.findOne({ 
+            where: { id_usuario, id_modulo } 
         });
 
-        res.json(registro || { porcentaje_avance: 0, intentos_realizados: 0 });
+        res.json(registro || { porcentaje_avance: 0 });
     } catch (error) {
-        res.status(500).json({ error: "Error al consultar estado del módulo" });
+        console.error("❌ Error en obtenerEstadoModulo:", error);
+        res.status(500).json({ error: "Error al consultar estado" });
     }
 };
