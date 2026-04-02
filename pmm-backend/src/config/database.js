@@ -7,8 +7,8 @@ const sequelize = new Sequelize(
     process.env.DB_USER,
     process.env.DB_PASSWORD,
     {
-        host: process.env.DB_HOST,
-        dialect: process.env.DB_DIALECT,
+        host: process.env.DB_HOST  || 'localhost',
+        dialect: process.env.DB_DIALECT || 'mysql', // Por defecto, usamos MySQL
         logging: false, // Ponlo en 'console.log' si quieres ver el SQL crudo que se ejecuta
         pool: {
             max: 5,
