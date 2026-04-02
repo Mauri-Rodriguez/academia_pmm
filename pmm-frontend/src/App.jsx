@@ -14,8 +14,8 @@ import ForoComunidad from './pages/ForoComunidad';
 import NotFoundNinja from './components/NotFoundNinja';
 import SolicitarRecuperacion from './pages/SolicitarRecuperacion';
 import ResetPassword from './pages/ResetPassword';
-
-
+import DashboardDocente from './pages/DashboardDocente';
+import ReporteDetalladoEstudiante from './pages/ReporteDetalladoEstudiante';
 // 🚩 IMPORTACIÓN FALTANTE: El nuevo componente de verificación
 import VerificarCorreo from './pages/VerificarCorreo';
 
@@ -40,7 +40,11 @@ function App() {
         <Route path="/estudiante/ranking" element={<LibroDeBingo />} />
         <Route path="/estudiante/biblioteca" element={<Biblioteca />} />
         <Route path="/estudiante/foro" element={<ForoComunidad />} />
-
+        <Route path="/docente/dashboard" element={<DashboardDocente />} />
+        <Route path="/docente/reporte-estudiante/:id" element={<ReporteDetalladoEstudiante />} />
+        
+        
+        
         {/* REDIRECCIÓN DE SEGURIDAD: SIEMPRE AL FINAL */}
         <Route path="*" element={<NotFoundNinja />} />
       </Routes>
