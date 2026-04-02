@@ -1,0 +1,49 @@
+name: CI de PMM Interactivo
+
+# 1. Define cuándo se ejecuta el workflow
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    # 2. Configura los servicios necesarios (Base de datos temporal)
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: pmm_interactivo
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    # 3. Descarga tu código del repositorio
+    - name: Checkout del código
+      uses: actions/checkout@v3
+
+    # 4. Instala Node.js
+    - name: Configurar Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    # 5. Instala las dependencias y ejecuta Jest
+    - name: Instalar dependencias y ejecutar pruebas
+      run: |
+        cd pmm-backend
+        npm install
+        npm test
+      env:
+        # Variables de entorno necesarias para que el backend no falle
+        NODE_ENV: test
+        DB_HOST: localhost
+        DB_USER: root
+        DB_PASSWORD: root
+        DB_NAME: pmm_interactivo
+        JWT_SECRET: test_secret_key_123
