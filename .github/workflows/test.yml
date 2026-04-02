@@ -16,11 +16,16 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: ""
+          # VUELVE A PONER "root", SI LO DEJAS VACÍO EL CONTENEDOR HACE CRASH
+          MYSQL_ROOT_PASSWORD: "root"
           MYSQL_DATABASE: pmm_interactivo
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot" 
+          --health-interval=10s 
+          --health-timeout=5s 
+          --health-retries=3
 
     steps:
     # 3. Descarga tu código del repositorio
@@ -42,8 +47,8 @@ jobs:
       env:
         # Variables de entorno necesarias para que el backend no falle
         NODE_ENV: test
-        DB_HOST: localhost
+        DB_HOST: 127.0.0.1   # CAMBIADO DE LOCALHOST A LA IP TCP
         DB_USER: root
-        DB_PASSWORD: ""
+        DB_PASSWORD: "root"  # DEBE COINCIDIR CON MYSQL_ROOT_PASSWORD
         DB_NAME: pmm_interactivo
         JWT_SECRET: una_cadena_secreta_muy_segura_para_pmm_2026
