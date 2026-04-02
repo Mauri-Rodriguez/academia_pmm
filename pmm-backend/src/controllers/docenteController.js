@@ -7,7 +7,9 @@ const Usuario = require('../models/Usuario');
 const Diagnostico = require('../models/Diagnostico');
 const ProgresoEstudiante = require('../models/ProgresoEstudiante');
 const ExcelJS = require('exceljs');
-
+const Modulo = require('../models/Modulo');
+const db = require('../config/database');
+const { QueryTypes } = require('sequelize'); // 
 /**
  * Función 1: Obtener un resumen del rendimiento de todos los estudiantes (JSON).
  */
@@ -16,7 +18,7 @@ exports.obtenerResumenEstudiantes = async (req, res) => {
         // Buscamos a todos los usuarios que tengan el rol de 'estudiante'
         const estudiantes = await Usuario.findAll({
             where: { rol: 'estudiante' },
-            attributes: ['id_usuario', 'nombre_completo', 'correo', 'rol'] 
+            attributes: ['id_usuario', 'nombre_completo', 'correo', 'rol']
         });
 
         if (!estudiantes || estudiantes.length === 0) {
@@ -69,7 +71,7 @@ exports.obtenerResumenEstudiantes = async (req, res) => {
 exports.descargarReporteExcel = async (req, res) => {
     try {
         // 1. Obtenemos los datos (misma lógica que el JSON)
-        const estudiantes = await Usuario.findAll({ 
+        const estudiantes = await Usuario.findAll({
             where: { rol: 'estudiante' },
             attributes: ['id_usuario', 'nombre_completo', 'correo']
         });
@@ -119,7 +121,7 @@ exports.descargarReporteExcel = async (req, res) => {
         worksheet.getRow(1).fill = {
             type: 'pattern',
             pattern: 'solid',
-            fgColor: { argb: 'FF0070C0' } 
+            fgColor: { argb: 'FF0070C0' }
         };
 
         // 4. Llenamos el Excel con los datos
@@ -128,11 +130,11 @@ exports.descargarReporteExcel = async (req, res) => {
         });
 
         // Bordes para todas las celdas
-        worksheet.eachRow({ includeEmpty: false }, function(row, rowNumber) {
-            row.eachCell({ includeEmpty: false }, function(cell, colNumber) {
+        worksheet.eachRow({ includeEmpty: false }, function (row, rowNumber) {
+            row.eachCell({ includeEmpty: false }, function (cell, colNumber) {
                 cell.border = {
-                    top: {style:'thin'}, left: {style:'thin'},
-                    bottom: {style:'thin'}, right: {style:'thin'}
+                    top: { style: 'thin' }, left: { style: 'thin' },
+                    bottom: { style: 'thin' }, right: { style: 'thin' }
                 };
             });
         });
@@ -147,5 +149,65 @@ exports.descargarReporteExcel = async (req, res) => {
     } catch (error) {
         console.error('Error al generar el Excel:', error);
         res.status(500).json({ mensaje: 'Error interno al generar el archivo Excel.' });
+    }
+};
+
+
+
+exports.obtenerReporteIndividual = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // 1. Identidad
+        const [estudiante] = await db.query(
+            "SELECT nombre_completo, correo FROM usuarios WHERE id_usuario = :id",
+            { replacements: { id }, type: QueryTypes.SELECT }
+        );
+
+        if (!estudiante) return res.status(404).json({ mensaje: 'Ninja no encontrado.' });
+
+        // 2. Score de Admisión
+        const [diagnostico] = await db.query(
+            "SELECT nivel_asignado, puntaje_obtenido FROM diagnostico WHERE id_usuario = :id ORDER BY fecha_realizacion DESC LIMIT 1",
+            { replacements: { id }, type: QueryTypes.SELECT }
+        );
+
+        // 3. Progreso en la Malla
+        const progresos = await db.query(`
+            SELECT m.nombre_modulo, p.porcentaje_avance AS porcentaje
+            FROM progreso_estudiante p
+            JOIN modulos m ON p.id_modulo = m.id_modulo
+            WHERE p.id_usuario = :id
+        `, { replacements: { id }, type: QueryTypes.SELECT });
+
+        // 4. 🚩 ANÁLISIS DE FALLOS POR FRECUENCIA (Agrupado por módulo)
+        const fallosAgrupados = await db.query(`
+            SELECT 
+                m.nombre_modulo AS tema, 
+                COUNT(h.id_error) AS cantidad_fallos
+            FROM historial_errores h
+            JOIN ejercicios e ON h.id_pregunta = e.id_ejercicio
+            JOIN modulos m ON e.id_modulo = m.id_modulo
+            WHERE h.id_usuario = :id
+            GROUP BY m.id_modulo
+            ORDER BY cantidad_fallos DESC
+            LIMIT 5
+        `, { replacements: { id }, type: QueryTypes.SELECT });
+
+        let suma = progresos.reduce((s, p) => s + Number(p.porcentaje), 0);
+        let promedio = progresos.length > 0 ? Math.round(suma / progresos.length) : 0;
+
+        res.json({
+            nombre: estudiante.nombre_completo,
+            correo: estudiante.correo,
+            rango: diagnostico ? diagnostico.nivel_asignado : 'Sin rango',
+            puntaje_diagnostico: diagnostico ? diagnostico.puntaje_obtenido : 0,
+            avance_promedio: promedio + '%',
+            progresos_detallados: progresos, 
+            fallos_comunes: fallosAgrupados // Enviamos el conteo, no la lista infinita
+        });
+
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 };

@@ -12,6 +12,6 @@ router.get('/resumen-estudiantes', verificarToken, verificarRol(['docente']), do
 router.get('/descargar-excel', verificarToken, verificarRol(['docente']), docenteController.descargarReporteExcel);
 
 
-
+router.get('/reporte-individual/:id', verificarToken, verificarRol(['docente']), docenteController.obtenerReporteIndividual);
 
 module.exports = router;
