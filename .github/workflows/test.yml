@@ -51,4 +51,5 @@ jobs:
         DB_USER: root
         DB_PASSWORD: "root"  # DEBE COINCIDIR CON MYSQL_ROOT_PASSWORD
         DB_NAME: pmm_interactivo
+        DB_DIALECT: mysql
         JWT_SECRET: una_cadena_secreta_muy_segura_para_pmm_2026
