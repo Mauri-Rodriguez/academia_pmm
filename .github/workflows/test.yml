@@ -16,7 +16,7 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: root
+          MYSQL_ROOT_PASSWORD: ""
           MYSQL_DATABASE: pmm_interactivo
         ports:
           - 3306:3306
@@ -44,6 +44,6 @@ jobs:
         NODE_ENV: test
         DB_HOST: localhost
         DB_USER: root
-        DB_PASSWORD: root
+        DB_PASSWORD: ""
         DB_NAME: pmm_interactivo
-        JWT_SECRET: test_secret_key_123
+        JWT_SECRET: una_cadena_secreta_muy_segura_para_pmm_2026
