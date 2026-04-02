@@ -32,33 +32,32 @@ const Diagnostico = () => {
         }
     };
 
-   const finalizarPrueba = async () => {
+const finalizarPrueba = async () => {
     setEnviando(true);
     try {
-        // 🚩 CONVERTIMOS EL OBJETO DE RESPUESTAS A UN ARRAY PARA EL BACKEND
-        // El backend espera: { respuestas: [ {id_pregunta, respuesta}, ... ] }
-        const respuestasFormateadas = Object.keys(respuestas).map(id => ({
-            id_pregunta: parseInt(id),
-            respuesta: respuestas[id]
-        }));
-
-        // 🚩 PASO 1: Enviamos las respuestas al backend (Él calculará el puntaje e IA)
-        const res = await api.post('/estudiante/guardar-diagnostico', {
-            respuestas: respuestasFormateadas 
+        // Cálculo de aciertos locales
+        let aciertosContados = 0;
+        preguntas.forEach(p => {
+            if (respuestas[p.id_pregunta] === p.respuesta_correcta) {
+                aciertosContados++;
+            }
         });
 
-        // 🚩 PASO 2: Redirigimos usando los datos reales que devolvió el servidor
-        // Nota: res.data.resultados viene de la estructura que definimos en el controlador
+        // 🚩 CORRECCIÓN DE URL: Cambiado a '/estudiante/diagnostico'
+        const res = await api.post('/estudiante/diagnostico', {
+            puntaje: aciertosContados 
+        });
+
+        // Navegación a resultados
         navigate('/estudiante/resultado', { 
             state: { 
-                rango: res.data.resultados.rango_asignado, 
-                aciertos: res.data.resultados.correctas 
+                rango: res.data.nivel_asignado, 
+                aciertos: res.data.puntaje_obtenido 
             } 
         });
 
     } catch (err) {
-        console.error("Error al guardar diagnóstico:", err);
-        // Si sale 404 aquí, revisa que el servidor esté corriendo y la ruta en estudianteRoutes.js sea correcta
+        console.error("❌ Error al guardar:", err);
         alert("Error al sellar tus resultados. Revisa la conexión con la Aldea.");
     } finally {
         setEnviando(false);

@@ -18,18 +18,18 @@ const ForoComunidad = () => {
 
     const [usuarioActualId, setUsuarioActualId] = useState(null);
     
-    // 🚩 Recuperamos el avatar del usuario actual desde localStorage
     const fotoUsuarioActual = localStorage.getItem('user_avatar') || null;
 
-    // 🎨 FUNCIÓN DE HASHING PARA COLORES (Estilo Gmail)
     const generarColorAvatar = (nombre = "Anónimo") => {
         const colores = [
             '#EF4444', '#3B82F6', '#10B981', '#F59E0B', 
             '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'
         ];
         let hash = 0;
-        for (let i = 0; i < nombre.length; i++) {
-            hash = nombre.charCodeAt(i) + ((hash << 5) - hash);
+        // Blindaje para el generador de color
+        const nombreSeguro = String(nombre || "Anónimo");
+        for (let i = 0; i < nombreSeguro.length; i++) {
+            hash = nombreSeguro.charCodeAt(i) + ((hash << 5) - hash);
         }
         const indice = Math.abs(hash) % colores.length;
         return colores[indice];
@@ -50,7 +50,7 @@ const ForoComunidad = () => {
     const cargarForo = async () => {
         try {
             const res = await api.get('/estudiante/foro/temas');
-            setPosts(res.data);
+            setPosts(Array.isArray(res.data) ? res.data : []);
         } catch (err) { console.error("Error al cargar muro"); } 
         finally { setLoading(false); }
     };
@@ -58,7 +58,7 @@ const ForoComunidad = () => {
     const cargarComentarios = async (id_post) => {
         try {
             const res = await api.get(`/estudiante/foro/comentarios/${id_post}`);
-            setComentarios(res.data);
+            setComentarios(Array.isArray(res.data) ? res.data : []);
         } catch (err) { console.error("Error al cargar respuestas"); }
     };
 
@@ -118,7 +118,6 @@ const ForoComunidad = () => {
     return (
         <div className="min-h-screen bg-[#05070A] text-slate-300 font-sans pb-20">
             
-            {/* 🚩 NAVBAR STICKY */}
             <nav className="sticky top-0 z-50 bg-[#0E121C]/90 backdrop-blur-md border-b border-white/5 px-6 py-4 shadow-2xl">
                 <div className="max-w-3xl mx-auto flex justify-between items-center">
                     <div className="flex items-center gap-4">
@@ -153,7 +152,6 @@ const ForoComunidad = () => {
                             <p className="animate-pulse text-shinobi-gold font-scholar text-xs uppercase">Sincronizando Muro...</p>
                         </div>
                     ) : posts.map((post) => {
-                        // 🚩 Verificamos si este post es del usuario actual para pintarle su foto
                         const esMio = Number(post.id_usuario) === Number(usuarioActualId);
                         const mostrarAvatar = esMio && fotoUsuarioActual;
 
@@ -163,7 +161,6 @@ const ForoComunidad = () => {
                                 key={post.id_post} 
                                 className="bg-[#0E121C] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 transition-colors shadow-xl"
                             >
-                                {/* User Header */}
                                 <div className="p-4 flex justify-between items-start">
                                     <div className="flex items-center gap-3">
                                         <div 
@@ -173,11 +170,12 @@ const ForoComunidad = () => {
                                             {mostrarAvatar ? (
                                                 <img src={fotoUsuarioActual} alt={post.autor} className="w-full h-full object-cover" />
                                             ) : (
-                                                post.autor.charAt(0).toUpperCase()
+                                                /* 🛡️ CORRECCIÓN AQUÍ: Optional chaining + Fallback */
+                                                post.autor?.charAt(0).toUpperCase() || "N"
                                             )}
                                         </div>
                                         <div>
-                                            <h4 className="text-sm font-bold text-white tracking-tight">{post.autor}</h4>
+                                            <h4 className="text-sm font-bold text-white tracking-tight">{post.autor || "Ninja Anónimo"}</h4>
                                             <p className="text-[10px] text-slate-500 font-medium italic">{new Date(post.fecha_creacion).toLocaleString()}</p>
                                         </div>
                                     </div>
@@ -190,7 +188,6 @@ const ForoComunidad = () => {
                                     )}
                                 </div>
 
-                                {/* Post Content */}
                                 <div className="px-4 pb-4">
                                     <h3 className="text-lg font-bold text-shinobi-gold mb-2 leading-tight italic">"{post.titulo}"</h3>
                                     <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">{post.contenido}</p>
@@ -206,7 +203,6 @@ const ForoComunidad = () => {
                                     </div>
                                 )}
 
-                                {/* Footer Interaction */}
                                 <div className="p-2 px-4 border-t border-white/5">
                                     <button 
                                         onClick={() => setMisionSeleccionada(post)}
@@ -233,7 +229,6 @@ const ForoComunidad = () => {
 
                     <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#0E121C] border border-shinobi-gold/20 rounded-2xl overflow-hidden shadow-2xl">
                         <div className="p-5 border-b border-white/5 bg-black/20 flex items-center gap-4">
-                            {/* 🚩 Header del post seleccionado */}
                             <div 
                                 className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold overflow-hidden"
                                 style={{ backgroundColor: !(Number(misionSeleccionada.id_usuario) === Number(usuarioActualId) && fotoUsuarioActual) ? generarColorAvatar(misionSeleccionada.autor) : 'transparent' }}
@@ -241,11 +236,12 @@ const ForoComunidad = () => {
                                 {Number(misionSeleccionada.id_usuario) === Number(usuarioActualId) && fotoUsuarioActual ? (
                                     <img src={fotoUsuarioActual} alt={misionSeleccionada.autor} className="w-full h-full object-cover" />
                                 ) : (
-                                    misionSeleccionada.autor.charAt(0).toUpperCase()
+                                    /* 🛡️ CORRECCIÓN AQUÍ: Optional chaining + Fallback */
+                                    misionSeleccionada.autor?.charAt(0).toUpperCase() || "N"
                                 )}
                             </div>
                             <div>
-                                <h4 className="text-xs font-bold text-white uppercase tracking-wider">{misionSeleccionada.autor}</h4>
+                                <h4 className="text-xs font-bold text-white uppercase tracking-wider">{misionSeleccionada.autor || "Ninja Anónimo"}</h4>
                                 <p className="text-[10px] text-slate-500 italic">Misión publicada</p>
                             </div>
                         </div>
@@ -258,13 +254,11 @@ const ForoComunidad = () => {
                             )}
                         </div>
 
-                        {/* Integrated Comments Feed */}
                         <div className="bg-black/30 p-6 space-y-6 border-t border-white/10">
                             <h4 className="text-[10px] uppercase tracking-[0.4em] text-slate-500 font-black">Respuestas de la Aldea</h4>
                             
                             <div className="space-y-4">
                                 {comentarios.map((c) => {
-                                    // 🚩 Verificamos si el comentario es tuyo
                                     const esMiComentario = Number(c.id_usuario) === Number(usuarioActualId);
                                     const mostrarAvatarComentario = esMiComentario && fotoUsuarioActual;
 
@@ -277,12 +271,13 @@ const ForoComunidad = () => {
                                                 {mostrarAvatarComentario ? (
                                                     <img src={fotoUsuarioActual} alt={c.autor} className="w-full h-full object-cover" />
                                                 ) : (
-                                                    c.autor.charAt(0).toUpperCase()
+                                                    /* 🛡️ CORRECCIÓN AQUÍ: Optional chaining + Fallback */
+                                                    c.autor?.charAt(0).toUpperCase() || "N"
                                                 )}
                                             </div>
                                             <div className="bg-[#1A2131] p-4 rounded-2xl rounded-tl-none flex-1 relative group">
                                                 <div className="flex justify-between items-center mb-1">
-                                                    <span className="text-xs font-black text-shinobi-gold">{c.autor}</span>
+                                                    <span className="text-xs font-black text-shinobi-gold">{c.autor || "Ninja"}</span>
                                                     {esMiComentario && (
                                                         <button onClick={() => eliminarComentario(c.id_comentario)} className="text-red-500/0 group-hover:text-red-500/50 transition-all p-1">
                                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -298,9 +293,7 @@ const ForoComunidad = () => {
                                 })}
                             </div>
 
-                            {/* Comment Input */}
                             <form onSubmit={enviarComentario} className="flex gap-3 pt-6 border-t border-white/5">
-                                {/* 🚩 Avatar en tu input de respuesta */}
                                 <div 
                                     className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-xs shadow-lg overflow-hidden"
                                     style={{ backgroundColor: !fotoUsuarioActual ? generarColorAvatar("Tú") : 'transparent' }}
@@ -331,7 +324,6 @@ const ForoComunidad = () => {
                 </div>
             )}
 
-            {/* MODAL NINJA (New Post) */}
             <AnimatePresence>
                 {mostrarModal && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">

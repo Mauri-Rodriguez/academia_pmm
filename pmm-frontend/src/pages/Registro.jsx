@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/api';
 
 const Registro = () => {
-    // 1. Mantenemos tu estructura base, agregando la confirmación
     const [formData, setFormData] = useState({
         nombre_completo: '',
         correo: '',
@@ -12,10 +11,12 @@ const Registro = () => {
         rol: 'estudiante'
     });
     
-    // 2. Mantenemos tu excelente manejo de estado para las alertas
     const [mensaje, setMensaje] = useState({ texto: '', tipo: '' });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    // 🛡️ DOMINIOS PERMITIDOS (Limpios y para producción)
+    const DOMINIOS_PERMITIDOS = ['estudiante.uniajc.edu.co', 'gmail.com', 'outlook.com', 'hotmail.com'];
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -25,7 +26,21 @@ const Registro = () => {
         e.preventDefault();
         setMensaje({ texto: '', tipo: '' });
 
-        // 🛡️ Filtros de Seguridad Frontend
+        // 🛡️ Filtros de Seguridad Frontend (Formato y Dominio)
+        const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!regexCorreo.test(formData.correo)) {
+            return setMensaje({ texto: 'El formato del correo es inválido.', tipo: 'error' });
+        }
+
+        const dominio = formData.correo.split('@')[1]?.toLowerCase();
+        if (!DOMINIOS_PERMITIDOS.includes(dominio)) {
+            return setMensaje({ 
+                texto: `Dominio no autorizado. Solo se permiten: ${DOMINIOS_PERMITIDOS.join(', ')}`, 
+                tipo: 'error' 
+            });
+        }
+
+        // 🛡️ Filtros de Contraseña
         if (formData.password.length < 6) {
             return setMensaje({ texto: 'La contraseña debe tener al menos 6 caracteres.', tipo: 'error' });
         }
@@ -57,7 +72,6 @@ const Registro = () => {
         }
     };
 
-    // Emblema visual para mantener la estética pareada con el Login
     const CodeMascotEmblem = () => (
         <div className="relative group w-full max-w-sm aspect-square flex items-center justify-center p-8 bg-white/5 border-shinobi-gold/20 border-2 rounded-full shadow-[0_0_20px_rgba(197,160,89,0.2)]">
             <div className="absolute inset-0 bg-shinobi-orange opacity-10 blur-3xl rounded-full scale-110"></div>
@@ -73,7 +87,6 @@ const Registro = () => {
         <div className="min-h-screen bg-shinobi-dark flex items-center justify-center p-6 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
             <div className="flex flex-col md:flex-row items-center justify-center gap-12 lg:gap-20 w-full max-w-7xl">
                 
-                {/* Lado del Emblema (Misma estructura que Login) */}
                 <div className="md:w-1/2 hidden md:flex flex-col items-center justify-center p-4 text-center">
                     <CodeMascotEmblem />
                     <p className="mt-6 font-scholar text-[10px] text-shinobi-gold uppercase tracking-[0.3em] opacity-60">
@@ -81,7 +94,6 @@ const Registro = () => {
                     </p>
                 </div>
                 
-                {/* Lado del Formulario */}
                 <div className="md:w-1/2 w-full flex items-center justify-center">
                     <div className="relative bg-[#f4f1e1]/95 backdrop-blur-md p-8 rounded-sm shadow-2xl w-full max-w-md border-y-4 border-shinobi-gold">
                         
@@ -95,7 +107,6 @@ const Registro = () => {
                             </p>
                         </div>
 
-                        {/* Sistema de Alertas Dinámico (Tu lógica original adaptada visualmente) */}
                         {mensaje.texto && (
                             <div className={`p-3 mb-6 text-xs font-bold border-l-4 animate-pulse ${
                                 mensaje.tipo === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-shinobi-red text-shinobi-red'

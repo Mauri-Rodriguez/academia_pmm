@@ -11,9 +11,19 @@ const Login = () => {
     
     const navigate = useNavigate();
 
+    // 🛡️ DOMINIOS PERMITIDOS (Con el acceso para estudiantes desbloqueado)
+    const DOMINIOS_PERMITIDOS = [
+        'uniajc.edu.co', 
+        'estudiante.uniajc.edu.co', 
+        'gmail.com', 
+        'outlook.com', 
+        'hotmail.com'
+    ];
+
     // 🚩 FUNCIÓN MAESTRA: Sincroniza la identidad en toda la aldea
-    const guardarSesion = (token, usuario) => {
-        localStorage.clear(); // Limpiamos rastro de llaves viejas (token_pmm)
+// 🚩 FUNCIÓN MAESTRA: Sincroniza la identidad en toda la aldea
+    const guardarSesion = (token, usuario, requiereDiagnostico = null) => {
+        localStorage.clear(); 
         
         localStorage.setItem('token', token); 
         localStorage.setItem('rol', usuario.rol);
@@ -21,45 +31,60 @@ const Login = () => {
 
         if (usuario.rol === 'docente') {
             navigate('/docente/dashboard');
+            return;
+        } 
+        
+        // 🛡️ DECISIÓN BLINDADA:
+        // 1. Priorizamos la bandera del backend (Esto salva el Google Login)
+        // 2. Fallback: Si la bandera es null, revisamos si el usuario no tiene rango.
+        const necesitaExamen = requiereDiagnostico !== null 
+            ? requiereDiagnostico 
+            : !usuario.rango;
+
+        if (necesitaExamen) {
+            console.log("🥷 Nuevo recluta detectado. Redirigiendo a Diagnóstico...");
+            navigate('/estudiante/diagnostico');
         } else {
-            // Verificamos si necesita diagnóstico antes del dashboard
-            verificarRutaEstudiante();
-        }
-    };
-
-    const verificarRutaEstudiante = async () => {
-        try {
-            await api.get('/estudiante/dashboard');
+            console.log("🔥 Guerrero veterano. Entrando al Dashboard...");
             navigate('/estudiante/dashboard');
-        } catch (err) {
-            if (err.response?.status === 403) {
-                navigate('/estudiante/diagnostico');
-            } else {
-                navigate('/estudiante/dashboard');
-            }
         }
     };
 
-    const handleGoogleSuccess = async (credentialResponse) => {
+const handleGoogleSuccess = async (credentialResponse) => {
         setLoading(true);
         try {
             const res = await api.post('/auth/google-login', { 
                 token: credentialResponse.credential 
             });
-            guardarSesion(res.data.token, res.data.usuario);
+            // 🚩 AQUÍ ESTÁ EL CAMBIO: Agregamos res.data.requiereDiagnostico
+            guardarSesion(res.data.token, res.data.usuario, res.data.requiereDiagnostico);
         } catch (err) {
-            setError('El sello de Google no es válido en esta aldea.');
+            setError(err.response?.data?.mensaje || 'El sello de Google no es válido en esta aldea.');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
         e.preventDefault();
+        setError(''); // Limpiamos errores previos
+
+        // 🛡️ FILTRO DE SEGURIDAD FRONTEND (Fail Fast)
+        const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!regexCorreo.test(correo)) {
+            return setError('El formato del correo es inválido.');
+        }
+
+        const dominio = correo.split('@')[1]?.toLowerCase();
+        if (!DOMINIOS_PERMITIDOS.includes(dominio)) {
+            return setError(`Dominio no autorizado. Usa: ${DOMINIOS_PERMITIDOS.join(', ')}`);
+        }
+
         setLoading(true);
         try {
             const res = await api.post('/auth/login', { correo, password });
-            guardarSesion(res.data.token, res.data.usuario);
+            // 🚩 AQUÍ ESTÁ EL CAMBIO: Agregamos res.data.requiereDiagnostico
+            guardarSesion(res.data.token, res.data.usuario, res.data.requiereDiagnostico);
         } catch (err) {
             setError(err.response?.data?.mensaje || 'Error en las credenciales del dojo.');
         } finally {
@@ -98,11 +123,21 @@ const Login = () => {
 
                         {error && <div className="bg-red-100 border-l-4 border-red-600 text-red-700 p-3 mb-6 text-xs font-bold animate-pulse">⚠️ {error}</div>}
 
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        <form onSubmit={handleSubmit} className="space-y-4">
                             <input required type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} className="w-full bg-transparent border-b-2 border-slate-300 p-2 focus:border-orange-500 outline-none text-slate-900" placeholder="ninja@academia.edu" />
-                            <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-transparent border-b-2 border-slate-300 p-2 focus:border-orange-500 outline-none text-slate-900" placeholder="••••••••" />
                             
-                            <button type="submit" disabled={loading} className="w-full bg-slate-900 text-shinobi-gold font-scholar py-3 tracking-widest hover:bg-orange-600 transition-all uppercase text-sm">
+                            <div>
+                                <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-transparent border-b-2 border-slate-300 p-2 focus:border-orange-500 outline-none text-slate-900" placeholder="••••••••" />
+                                
+                                {/* 🛡️ NUEVO ENLACE DE RECUPERACIÓN */}
+                                <div className="flex justify-end mt-2">
+                                    <Link to="/recuperar-password" className="text-[10px] text-slate-500 hover:text-orange-600 font-modern uppercase tracking-widest transition-colors">
+                                        ¿Olvidaste tu contraseña?
+                                    </Link>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" disabled={loading} className="w-full mt-4 bg-slate-900 text-shinobi-gold font-scholar py-3 tracking-widest hover:bg-orange-600 transition-all uppercase text-sm">
                                 {loading ? 'Validando Pergamino...' : 'Iniciar Sesión'}
                             </button>
 
