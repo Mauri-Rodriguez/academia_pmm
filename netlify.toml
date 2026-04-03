@@ -1,0 +1,13 @@
+[build]
+  # 1. Le decimos que entre a la carpeta del frontend
+  base = "pmm-frontend"
+  # 2. Le decimos el comando para compilar Vite
+  command = "npm run build"
+  # 3. Le decimos cuál es la carpeta final que debe mostrar al público
+  publish = "dist"
+
+# Esto evita el error 404 si el usuario recarga la página (F5)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
