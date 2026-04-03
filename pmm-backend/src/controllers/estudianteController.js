@@ -534,14 +534,43 @@ exports.actualizarProgreso = async (req, res) => {
 exports.obtenerBiblioteca = async (req, res) => {
     try {
         const id_usuario = extraerIdUsuario(req);
-        const diag = await Diagnostico.findOne({ where: { id_usuario }, order: [['fecha_realizacion', 'DESC']] });
-        const nivel = diag ? diag.nivel_asignado : 'Genin (Iniciado)';
+        
+        // 🚩 Buscamos el rango en la tabla 'usuarios', que es el rango en tiempo real
+        const [usuario] = await db.query(
+            'SELECT rango_actual, rango FROM usuarios WHERE id_usuario = ?', 
+            { replacements: [id_usuario], type: db.QueryTypes.SELECT }
+        );
+        
+        const nivel = usuario?.rango_actual || usuario?.rango || 'Genin (Iniciado)';
+        
+        // 🚩 Base de conocimiento (Todos ven esto)
         let permitidos = ['Genin (Iniciado)', 'Bajo'];
-        if (nivel.includes('Chunin')) permitidos.push('Chunin (Guerrero)', 'Intermedio');
-        if (nivel.includes('Jonin')) permitidos.push('Chunin (Guerrero)', 'Intermedio', 'Jonin (Maestro)', 'Alto');
-        const pergaminos = await db.query("SELECT * FROM biblioteca_pergaminos WHERE nivel_requerido IN (?) ORDER BY id_pergamino DESC", { replacements: [permitidos], type: db.QueryTypes.SELECT });
+        
+        // 🚩 Desbloqueos por rango (Usamos if independientes para acumular)
+        if (nivel.includes('Chunin')) {
+            permitidos.push('Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio');
+        } 
+        if (nivel.includes('Jonin')) {
+            permitidos.push('Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto');
+        } 
+        if (nivel.includes('Kage') || nivel.includes('Leyenda')) {
+            // El Kage hereda todos los conocimientos de la academia
+            permitidos.push('Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto', 'Kage (Leyenda)', 'Supremo');
+        }
+
+        // Limpiamos duplicados en caso de que las palabras se crucen
+        permitidos = [...new Set(permitidos)];
+
+        const pergaminos = await db.query(
+            "SELECT * FROM biblioteca_pergaminos WHERE nivel_requerido IN (?) ORDER BY id_pergamino DESC", 
+            { replacements: [permitidos], type: db.QueryTypes.SELECT }
+        );
+        
         res.json(pergaminos);
-    } catch (e) { res.status(500).json({ mensaje: 'Error biblioteca' }); }
+    } catch (e) { 
+        console.error("Error en biblioteca:", e);
+        res.status(500).json({ mensaje: 'Error biblioteca' }); 
+    }
 };
 
 exports.obtenerEjerciciosModulo = async (req, res) => {
