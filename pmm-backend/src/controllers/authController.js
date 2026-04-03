@@ -21,34 +21,39 @@ const validarBuzonReal = async (correo) => {
     try {
         const apiKey = process.env.ZEROBOUNCE_API_KEY?.trim();
 
-        // 🛡️ REGLA ESTRICTA (Fail-Closed): Si no hay llave, bloqueamos el registro.
+        // Si no hay llave configurada, dejamos pasar (Fail-Open)
         if (!apiKey) {
-            console.error("🚨 CRÍTICO: No se encontró ZEROBOUNCE_API_KEY en el .env. Servidor vulnerable.");
-            return false;
+            console.warn("⚠️ ADVERTENCIA: ZEROBOUNCE_API_KEY no encontrada. Omitiendo validación.");
+            return true; 
         }
 
-        // URL de la API v2 de ZeroBounce
         const url = `https://api.zerobounce.net/v2/validate?api_key=${apiKey}&email=${correo}`;
-
         console.log(`🔍 Consultando a ZeroBounce el correo: ${correo}...`);
+        
         const respuesta = await axios.get(url);
 
         const estado = respuesta.data.status;
         console.log(`📡 Respuesta de ZeroBounce: [${estado}]`);
 
-        // Solo bloqueamos de forma absoluta si la API asegura que es "invalid" (no existe).
+        // 🛡️ REGLA ESTRICTA DE BLOQUEO: Solo rechazamos si ZeroBounce jura que el correo NO existe.
         if (estado === "invalid") {
             return false;
         }
 
+        // Si es "valid", "catch-all" o "unknown", lo dejamos pasar.
         return true;
+
     } catch (error) {
-        console.error("🚨 Error de conexión con ZeroBounce:", error.response?.data || error.message);
-        // Si la API falla por red o llave incorrecta, bloqueamos el registro para proteger la DB
-        return false;
+        // Capturamos el error 1020 de Cloudflare o cualquier otra caída de red
+        console.error("🚨 Error de infraestructura al contactar ZeroBounce:", error.response?.data?.title || error.message);
+        
+        // 🛡️ LA MAGIA DEL FAIL-OPEN:
+        // El error fue de nuestra infraestructura (Railway vs Cloudflare), no del usuario.
+        // Por lo tanto, asumimos que el correo es bueno para no romper el sistema.
+        console.log(`[Bypass Ninja] 🥷 Permitido por Fail-Open. No se pudo verificar ${correo}.`);
+        return true; 
     }
 };
-
 // -----------------------------------------------------------------
 // 1. Registro Manual (Con Filtro Institucional y ZeroBounce)
 // -----------------------------------------------------------------
