@@ -77,16 +77,6 @@ const finalizarPrueba = async () => {
 
     return (
         <div className="min-h-screen bg-shinobi-dark flex flex-col items-center justify-center p-4">
-            
-            <div className="max-w-2xl w-full mb-4">
-                <button 
-                    onClick={() => navigate('/estudiante/dashboard')}
-                    className="flex items-center gap-2 text-shinobi-gold/60 hover:text-shinobi-gold transition-all font-scholar text-[10px] uppercase tracking-widest group"
-                >
-                    <span className="text-lg group-hover:-translate-x-1 transition-transform">←</span>
-                    Abandonar Examen
-                </button>
-            </div>
 
             <div className="max-w-2xl w-full bg-[#f4f1e1] p-10 rounded-sm border-t-8 border-shinobi-orange shadow-2xl relative overflow-hidden">
                 <div className="absolute -right-4 -bottom-4 opacity-5 pointer-events-none">
