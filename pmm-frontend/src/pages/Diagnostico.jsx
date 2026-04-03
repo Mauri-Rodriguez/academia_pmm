@@ -75,7 +75,7 @@ const finalizarPrueba = async () => {
     const pActual = preguntas[paso];
     const opcionesKeys = ['opcion_a', 'opcion_b', 'opcion_c', 'opcion_d'];
 
-    return (
+return (
         <div className="min-h-screen bg-shinobi-dark flex flex-col items-center justify-center p-4">
 
             <div className="max-w-2xl w-full bg-[#f4f1e1] p-10 rounded-sm border-t-8 border-shinobi-orange shadow-2xl relative overflow-hidden">
@@ -83,18 +83,21 @@ const finalizarPrueba = async () => {
                     <span className="text-9xl font-scholar text-shinobi-dark">Σ</span>
                 </div>
 
-                <div className="mb-8 flex justify-between items-end">
-                    <div>
-                        <p className="text-shinobi-orange font-scholar text-xs uppercase tracking-widest">Examen de Rango</p>
-                        <h2 className="text-2xl font-scholar text-shinobi-dark uppercase">Matemáticas</h2>
+                {/* 🚩 EL ESCUDO NINJA: key={paso} obliga a React a recrear esta sección en cada pregunta */}
+                <div key={paso}>
+                    <div className="mb-8 flex justify-between items-end">
+                        <div>
+                            <p className="text-shinobi-orange font-scholar text-xs uppercase tracking-widest">Examen de Rango</p>
+                            <h2 className="text-2xl font-scholar text-shinobi-dark uppercase">Matemáticas</h2>
+                        </div>
+                        <p className="font-modern text-slate-400 text-sm">Pergamino {paso + 1} de {preguntas.length}</p>
                     </div>
-                    <p className="font-modern text-slate-400 text-sm">Pergamino {paso + 1} de {preguntas.length}</p>
-                </div>
 
-                <div className="mb-10 min-h-[80px]">
-                    <p className="text-lg text-shinobi-dark font-modern leading-relaxed italic">
-                        "{pActual.pregunta}"
-                    </p>
+                    <div className="mb-10 min-h-[80px]">
+                        <p className="text-lg text-shinobi-dark font-modern leading-relaxed italic">
+                            "{pActual.pregunta}"
+                        </p>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">

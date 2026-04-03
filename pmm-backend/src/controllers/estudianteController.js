@@ -29,8 +29,6 @@ const extraerIdUsuario = (req) => {
     } catch (err) { return null; }
 };
 
-
-
 // --- ⚡ GESTIÓN DE ERRORES CON GEMINI 2.50 FLASH-LITE ---
 
 exports.registrarFallo = async (req, res) => {
@@ -172,9 +170,6 @@ exports.obtenerPreguntasDiagnostico = async (req, res) => {
 };
 
 // 🚩 FUNCIÓN: FINALIZAR MÓDULO, OTORGAR INSIGNIA Y EVALUAR ASCENSO
-// 🚩 FUNCIÓN: FINALIZAR MÓDULO Y EVALUAR ASCENSO (BLINDADA)
-// 🚩 FUNCIÓN: FINALIZAR MÓDULO Y EVALUAR ASCENSO (Sincronización Total de Columnas)
-// 🚩 FUNCIÓN: FINALIZAR MÓDULO Y EVALUAR ASCENSO (Sincronización y Lógica por Tiers)
 exports.finalizarModulo = async (req, res) => {
     const t = await db.transaction();
     try {
@@ -290,6 +285,7 @@ exports.finalizarModulo = async (req, res) => {
         res.status(500).json({ error: "Falla en el proceso de sellado" });
     }
 };
+
 // 🚩 FUNCIÓN UNIFICADA: GUARDAR DIAGNÓSTICO + SINCRONIZACIÓN DE INSIGNIAS
 exports.guardarDiagnostico = async (req, res) => {
     const t = await db.transaction();
@@ -299,7 +295,6 @@ exports.guardarDiagnostico = async (req, res) => {
 
         if (!id_usuario) return res.status(401).json({ error: "Sesión expirada" });
 
-        // 1. Clasificación por IA
         // 1. Clasificación por IA (Sincronizado con Railway)
         const iaBaseUrl = process.env.IA_SERVICE_URL || 'http://127.0.0.1:5000';
 
@@ -379,6 +374,7 @@ exports.guardarDiagnostico = async (req, res) => {
         res.status(500).json({ error: "Error en el sello de diagnóstico" });
     }
 };
+
 // --- 🏯 DASHBOARD Y PROGRESO (ORDENAMIENTO PEDAGÓGICO) ---
 
 exports.obtenerDashboard = async (req, res) => {
@@ -471,7 +467,13 @@ exports.obtenerDashboard = async (req, res) => {
             db.query(`SELECT id_insignia FROM usuarios_insignias WHERE id_usuario = ?`, { replacements: [id_usuario], type: db.QueryTypes.SELECT })
         ]);
 
-        const puntajeInicial = diag[0] ? diag[0].puntaje_obtenido : 0;
+        // 🛑 EL MURO DE CRISTAL (BLOQUEO DE DESERTORES) 🛑
+        // Si el arreglo 'diag' está vacío, significa que el estudiante NUNCA terminó el diagnóstico.
+        if (!diag || diag.length === 0) {
+            return res.status(403).json({ mensaje: 'El ninja aún no ha completado su prueba de rango.' });
+        }
+
+        const puntajeInicial = diag[0].puntaje_obtenido;
 
         // 🚩 4. PROCESAR PROGRESO POR MÓDULO
         const rutaConProgreso = await Promise.all(modulos.map(async (m) => {
@@ -502,6 +504,7 @@ exports.obtenerDashboard = async (req, res) => {
         res.status(500).json({ mensaje: 'Error motor dashboard' });
     }
 };
+
 // 🚩 CORRECCIÓN 3: Actualizar progreso con protección de "Piso de Cristal"
 // No permite que un porcentaje menor pise uno mayor (evita que el 90% pise al 100%).
 exports.actualizarProgreso = async (req, res) => {
@@ -662,7 +665,6 @@ exports.obtenerLogrosEstudiante = async (req, res) => {
         res.json(insignias);
     } catch (error) { res.status(500).json({ error: "Falla insignias" }); }
 };
-
 
 exports.obtenerAnaliticaErrores = async (req, res) => {
     try {

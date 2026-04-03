@@ -16,7 +16,7 @@ const DashboardEstudiante = () => {
     const [fotoPerfil, setFotoPerfil] = useState(localStorage.getItem('user_avatar') || null);
 
     // 🚩 CARGA DE DATOS CENTRALIZADA
-const cargarDatosDashboard = useCallback(async () => {
+    const cargarDatosDashboard = useCallback(async () => {
         try {
             const [resDash, resErrores] = await Promise.all([
                api.get('/api/estudiante/dashboard'),
@@ -176,12 +176,23 @@ const cargarDatosDashboard = useCallback(async () => {
             <main className="flex-1 p-5 md:p-10 lg:p-16 overflow-y-auto relative pb-28 md:pb-16">
                 <div className="absolute top-0 right-0 w-full md:w-1/2 h-1/2 bg-shinobi-gold/5 blur-[80px] md:blur-[120px] rounded-full -z-10"></div>
                 
-                <header className="mb-8 md:mb-12 animate-in fade-in slide-in-from-top-4 duration-1000">
-                    <div className="flex items-center gap-3 md:gap-4 mb-2">
+                {/* 🚩 HEADER CON BOTÓN DE SALIDA PARA MÓVILES INYECTADO */}
+                <header className="mb-8 md:mb-12 animate-in fade-in slide-in-from-top-4 duration-1000 relative">
+                    
+                    {/* Botón de escape táctico (Solo Móviles) */}
+                    <button 
+                        onClick={() => { localStorage.clear(); navigate('/'); }} 
+                        className="md:hidden absolute top-0 right-0 text-rose-500/60 hover:text-rose-500 flex flex-col items-center transition-all active:scale-95 bg-rose-500/5 p-2 rounded-xl border border-rose-500/10 z-10"
+                    >
+                        <span className="text-xl leading-none">🚪</span>
+                        <span className="text-[7px] font-scholar uppercase tracking-widest mt-1 font-bold">Salir</span>
+                    </button>
+
+                    <div className="flex items-center gap-3 md:gap-4 mb-2 pr-16 md:pr-0">
                         <div className={`h-[2px] w-8 md:w-12 ${configGlobal.bar}`}></div>
                         <span className="text-shinobi-gold font-scholar text-[10px] md:text-xs tracking-[0.2em] md:tracking-[0.4em] uppercase opacity-50">Estado Operativo: {datos?.estadisticas?.rango_actual}</span>
                     </div>
-                    <h1 className="text-3xl md:text-5xl lg:text-6xl font-scholar text-white tracking-tighter uppercase leading-tight">
+                    <h1 className="text-3xl md:text-5xl lg:text-6xl font-scholar text-white tracking-tighter uppercase leading-tight pr-16 md:pr-0">
                         PROGRESO DE <span className={`${configGlobal.color} block md:inline mt-1 md:mt-0`}>{nombreUsuario}</span>
                     </h1>
                 </header>
