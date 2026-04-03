@@ -26,6 +26,12 @@ const MAPA_NIVELES = {
         siguienteNivel: 'Maestro Kage', 
         insigniaRangoId: 103, 
         mensaje: '¡Eres un maestro absoluto! Has completado el entrenamiento.' 
+    },
+    // 🚩 AGREGAMOS EL NIVEL FINAL PARA EVITAR EL RESET
+    'Maestro Kage': {
+        siguienteNivel: null, // Ya no hay más allá
+        insigniaRangoId: 103, // Una insignia legendaria extra
+        mensaje: '¡Leyenda Viva! Has alcanzado la cima del conocimiento.'
     }
 };
 
@@ -117,8 +123,20 @@ exports.finalizarModuloYEvaluarAscenso = async (req, res) => {
         let datosAscenso = null;
 
         // 4. Lógica de Subida de Rango
+// 4. Lógica de Subida de Rango
         const configSiguiente = MAPA_NIVELES[nivelActual];
 
+        // 🛡️ SEGURIDAD: Si ya no hay niveles superiores (es Maestro Kage), salimos del proceso de ascenso
+        if (!configSiguiente || !configSiguiente.siguienteNivel) {
+            await t.commit();
+            return res.status(200).json({
+                success: true,
+                mensaje: '¡Ya eres una Leyenda Viva! No hay más rangos que alcanzar.',
+                ascenso: false
+            });
+        }
+
+        // Si hay un nivel siguiente y completó los módulos... procedemos al ascenso
         if (configSiguiente && completadosCount >= totalRequeridos) {
             huboAscenso = true;
 
@@ -128,7 +146,7 @@ exports.finalizarModuloYEvaluarAscenso = async (req, res) => {
                 { where: { id_usuario }, transaction: t }
             );
 
-            // Insertar Insignia de Rango (101, 102, etc)
+            // Insertar Insignia de Rango
             await sequelize.query(
                 'INSERT IGNORE INTO Usuarios_Insignias (id_usuario, id_insignia, fecha_otorgada) VALUES (?, ?, NOW())',
                 { replacements: [id_usuario, configSiguiente.insigniaRangoId], transaction: t }

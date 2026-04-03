@@ -21,13 +21,21 @@ const Modulo = sequelize.define('Modulo', {
         type: DataTypes.TEXT,
         allowNull: true
     },
-    nivel: {
+nivel: {
         type: DataTypes.STRING, 
         allowNull: false,
-        // 🚩 TIP SENIOR: Aseguramos que solo entren los rangos de la Aldea
         validate: {
             isIn: {
-                args: [['Genin (Iniciado)', 'Chunin (Guerrero)', 'Jonin (Maestro)', 'Bajo', 'Intermedio', 'Alto']],
+                // 🚩 ACTUALIZACIÓN: Agregamos 'Maestro Kage' a la lista permitida
+                args: [[
+                    'Genin (Iniciado)', 
+                    'Chunin (Guerrero)', 
+                    'Jonin (Maestro)', 
+                    'Bajo', 
+                    'Intermedio', 
+                    'Alto',
+                    'Maestro Kage' // 👈 ¡Imprescindible!
+                ]],
                 msg: "El nivel debe ser un rango válido de la Aldea Digital."
             }
         }
