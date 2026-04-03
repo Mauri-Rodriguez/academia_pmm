@@ -58,7 +58,7 @@ const Usuario = sequelize.define('Usuario', {
     },
     verificado: {
         type: DataTypes.BOOLEAN,
-        defaultValue: 'Activo'
+        defaultValue: false
     }
 }, {
     tableName: 'usuarios',
