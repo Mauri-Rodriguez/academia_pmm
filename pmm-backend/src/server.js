@@ -19,7 +19,8 @@ app.use(cors({
     origin: [
         'http://localhost:5173', 
         process.env.FRONTEND_URL, 
-        'https://lucky-croquembouche-2c8b48.netlify.app' 
+        'https://lucky-croquembouche-2c8b48.netlify.app', 
+        'https://academia-pmm.vercel.app'
     ],
     credentials: true, 
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'] // Permite todos los métodos HTTP necesarios para tu API
