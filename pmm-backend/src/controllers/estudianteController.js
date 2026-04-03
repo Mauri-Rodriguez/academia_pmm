@@ -461,7 +461,7 @@ exports.obtenerDashboard = async (req, res) => {
                 raw: true,
                 order: [[db.literal("FIELD(nivel, 'Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto')")], ['id_modulo', 'ASC']]
             }),
-            db.query(`SELECT * FROM Insignias`, { type: db.QueryTypes.SELECT }),
+            db.query(`SELECT * FROM insignias`, { type: db.QueryTypes.SELECT }),
             db.query(`SELECT id_insignia FROM usuarios_insignias WHERE id_usuario = ?`, { replacements: [id_usuario], type: db.QueryTypes.SELECT })
         ]);
 
