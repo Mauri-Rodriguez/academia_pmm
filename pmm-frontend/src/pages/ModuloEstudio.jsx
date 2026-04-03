@@ -28,7 +28,7 @@ const ModuloEstudio = () => {
                 const resEjercicios = await api.get(`api/estudiante/modulo/${id_modulo}/ejercicios`);
                 setEjercicios(resEjercicios.data);
 
-                const resProgreso = await api.get(`/api/api/estudiante/dashboard`);
+                const resProgreso = await api.get(`/api/estudiante/dashboard`);
                 const moduloActual = resProgreso.data.ruta_ia_asignada?.find(m => m.id_modulo === parseInt(id_modulo));
 
                 if (moduloActual && moduloActual.porcentaje_avance === 100) {
