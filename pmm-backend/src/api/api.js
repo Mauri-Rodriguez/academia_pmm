@@ -1,10 +1,12 @@
 import axios from 'axios';
 
 // 🛡️ MODO DINÁMICO: 
-// Usa la variable de entorno en Producción (Netlify), y localhost en tu PC.
-// Además, le agregamos el '/api' automáticamente a TODO.
+// Limpiamos cualquier slash final de la variable de entorno y le inyectamos el '/api' a TODO.
+const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const baseUrlClean = rawUrl.replace(/\/$/, ''); // Quita el '/' extra si existe
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001' 
+    baseURL: baseUrlClean // 👈 Lo dejas limpio, SIN el + '/api'
 });
 // 1️⃣ INTERCEPTOR DE PETICIÓN: Inyecta el token en cada llamada
 api.interceptors.request.use((config) => {
