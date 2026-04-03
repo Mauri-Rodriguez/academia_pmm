@@ -252,7 +252,7 @@ exports.finalizarModulo = async (req, res) => {
             }
 
             if (ascendio) {
-                // BLINDAJE TOTAL: Actualizamos todas las columnas
+                // 1. Actualizamos el rango en todas las tablas
                 await db.query(`
                     UPDATE usuarios 
                     SET rango = ?, rango_actual = ? 
@@ -266,7 +266,11 @@ exports.finalizarModulo = async (req, res) => {
                     ORDER BY fecha_realizacion DESC LIMIT 1
                 `, { replacements: [nuevoRango, id_usuario], transaction: t });
 
-                const idMedalla = nuevoRango.includes('Chunin') ? 101 : 102;
+                // 🚩 2. LÓGICA DE MEDALLAS DE RANGO CORREGIDA
+                let idMedalla = 101; // Default Chunin
+                if (nuevoRango.includes('Jonin')) idMedalla = 102;
+                if (nuevoRango.includes('Kage') || nuevoRango.includes('Leyenda')) idMedalla = 103; // 🏅 EL SELLO KAGE
+
                 await db.query('INSERT IGNORE INTO usuarios_insignias (id_usuario, id_insignia, fecha_otorgada) VALUES (?, ?, NOW())',
                     { replacements: [id_usuario, idMedalla], transaction: t });
             }
@@ -450,16 +454,18 @@ exports.obtenerDashboard = async (req, res) => {
             Modulo.findAll({
                 where: {
                     nivel: {
-                        // const { Op } = require('sequelize');
-                        [Op.in]: nivelIA.includes('Jonin')
-                            ? ['Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto']
-                            : nivelIA.includes('Chunin')
-                                ? ['Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio']
-                                : ['Genin (Iniciado)', 'Bajo']
+                        // 🚩 LA LLAVE MAESTRA DE KAGE AÑADIDA AQUÍ
+                        [Op.in]: (nivelIA.includes('Kage') || nivelIA.includes('Leyenda'))
+                            ? ['Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto', 'Kage (Leyenda)']
+                            : nivelIA.includes('Jonin')
+                                ? ['Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto']
+                                : nivelIA.includes('Chunin')
+                                    ? ['Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio']
+                                    : ['Genin (Iniciado)', 'Bajo']
                     }
                 },
                 raw: true,
-                order: [[db.literal("FIELD(nivel, 'Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto')")], ['id_modulo', 'ASC']]
+                order: [[db.literal("FIELD(nivel, 'Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto', 'Kage (Leyenda)')")], ['id_modulo', 'ASC']]
             }),
             db.query(`SELECT * FROM insignias`, { type: db.QueryTypes.SELECT }),
             db.query(`SELECT id_insignia FROM usuarios_insignias WHERE id_usuario = ?`, { replacements: [id_usuario], type: db.QueryTypes.SELECT })
