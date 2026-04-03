@@ -49,10 +49,11 @@ const guardarSesion = (token, usuario, requiereDiagnostico) => {
 const handleGoogleSuccess = async (credentialResponse) => {
         setLoading(true);
         try {
-            const res = await api.post('/auth/google-login', { 
+            // ✅ EL CAMBIO MÁGICO: Le agregamos el /api al inicio de la ruta
+            const res = await api.post('/api/auth/google-login', { 
                 token: credentialResponse.credential 
             });
-            // 🚩 AQUÍ ESTÁ EL CAMBIO: Agregamos res.data.requiereDiagnostico
+            // 🚩 Sincronizamos la sesión con el diagnóstico
             guardarSesion(res.data.token, res.data.usuario, res.data.requiereDiagnostico);
         } catch (err) {
             setError(err.response?.data?.mensaje || 'El sello de Google no es válido en esta aldea.');

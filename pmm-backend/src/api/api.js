@@ -4,11 +4,8 @@ import axios from 'axios';
 // Usa la variable de entorno en Producción (Netlify), y localhost en tu PC.
 // Además, le agregamos el '/api' automáticamente a TODO.
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL 
-        ? `${import.meta.env.VITE_API_URL}/api` 
-        : 'http://localhost:3001/api' 
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001' 
 });
-
 // 1️⃣ INTERCEPTOR DE PETICIÓN: Inyecta el token en cada llamada
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token'); 
