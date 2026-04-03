@@ -41,15 +41,16 @@ app.use('/api/ejercicios', ejercicioRoutes);
 app.use('/api/progreso', progresoRoutes);
 
 // === ARRANQUE DEL SERVIDOR (Solo si no estamos en modo de prueba) ===
+// === ARRANQUE DEL SERVIDOR ===
 const PORT = process.env.PORT || 3001;
 
 if (process.env.NODE_ENV !== 'test') {
     const startServer = async () => {
         try {
-            // alter: false para no modificar tablas existentes en producción accidentalmente
             await sequelize.sync({ alter: false }); 
-            app.listen(PORT, () => {
-                console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+            // 🚩 AQUÍ ESTÁ EL CAMBIO VITAL: Agregar '0.0.0.0'
+            app.listen(PORT, '0.0.0.0', () => {
+                console.log(`🚀 Servidor enlazado a 0.0.0.0 y corriendo en el puerto ${PORT}`);
             });
         } catch (error) {
             console.error('Error al iniciar el servidor:', error);
@@ -57,6 +58,5 @@ if (process.env.NODE_ENV !== 'test') {
     };
     startServer();
 }
-
 // === EXPORTACIÓN VITAL PARA JEST ===
 module.exports = app;
