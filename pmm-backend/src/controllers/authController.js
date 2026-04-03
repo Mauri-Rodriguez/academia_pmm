@@ -9,15 +9,10 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // 🛡️ CONFIGURACIÓN DEL TRANSPORTADOR DE CORREOS
 const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587, // El cambio clave
-    secure: false, // Obligatorio al usar el 587
+    service: 'gmail', // 👈 ESTA ES LA CLAVE: Configura todo automáticamente y evita IPv6
     auth: {
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-    },
-    tls: {
-        rejectUnauthorized: false
+        pass: process.env.SMTP_PASS // 
     }
 });
 
@@ -29,14 +24,14 @@ const validarBuzonReal = async (correo) => {
         // Si no hay llave configurada, dejamos pasar (Fail-Open)
         if (!apiKey) {
             console.warn("⚠️ ADVERTENCIA: HUNTER_API_KEY no encontrada. Omitiendo validación.");
-            return true; 
+            return true;
         }
 
         const url = `https://api.hunter.io/v2/email-verifier?email=${correo}&api_key=${apiKey}`;
         console.log(`🔍 Consultando a Hunter.io el correo: ${correo}...`);
-        
+
         const respuesta = await axios.get(url);
-        
+
         // Hunter.io guarda el estado dentro de data.data.status
         const estado = respuesta.data?.data?.status;
         console.log(`📡 Respuesta de Hunter.io: [${estado}]`);
@@ -53,10 +48,10 @@ const validarBuzonReal = async (correo) => {
     } catch (error) {
         // Capturamos cualquier error de red o límite de API
         console.error("🚨 Error de infraestructura al contactar Hunter.io:", error.response?.data?.errors[0]?.details || error.message);
-        
+
         // 🛡️ LA MAGIA DEL FAIL-OPEN:
         console.log(`[Bypass Ninja] 🥷 Permitido por Fail-Open. No se pudo verificar ${correo}.`);
-        return true; 
+        return true;
     }
 };
 // -----------------------------------------------------------------
@@ -114,32 +109,40 @@ exports.register = async (req, res) => {
         );
 
         // ✉️ 7. Enviar el correo de activación notificando el ROL
+        //(Evita el Error 500)
         const urlConfirmacion = `${process.env.FRONTEND_URL}/verificar-correo/${tokenVerificacion}`;
 
-        await transporter.sendMail({
-            from: `"Academia PMM" <${process.env.SMTP_USER}>`,
-            to: correo,
-            subject: "⚔️ Confirma tu Sello Ninja en PMM Interactivo",
-            html: `
-                <div style="font-family: sans-serif; text-align: center; padding: 20px;">
-                    <h2>¡Bienvenido a la Aldea, ${nombre_completo}!</h2>
-                    <p>El sistema te ha reconocido bajo el rango de <b>${rolAsignado.toUpperCase()}</b>.</p>
-                    <p>Para activar tu chakra y entrar al sistema, debes confirmar que este correo es real.</p>
-                    <a href="${urlConfirmacion}" style="background: #C5A059; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 15px;">
-                        Verificar mi Correo
-                    </a>
-                    <p style="font-size: 12px; color: #666; margin-top: 20px;">Este enlace expirará en 1 hora.</p>
-                </div>
-            `
-        });
+        try {
+            await transporter.sendMail({
+                from: `"Academia PMM" <${process.env.SMTP_USER}>`,
+                to: correo,
+                subject: "⚔️ Confirma tu Sello Ninja en PMM Interactivo",
+                html: `
+                    <div style="font-family: sans-serif; text-align: center; padding: 20px;">
+                        <h2>¡Bienvenido a la Aldea, ${nombre_completo}!</h2>
+                        <p>El sistema te ha reconocido bajo el rango de <b>${rolAsignado.toUpperCase()}</b>.</p>
+                        <p>Para activar tu chakra, confirma que este correo es real.</p>
+                        <a href="${urlConfirmacion}" style="background: #C5A059; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 15px;">
+                            Verificar mi Correo
+                        </a>
+                    </div>
+                `
+            });
+            console.log(`📧 Correo de activación enviado con éxito a ${correo}`);
+        } catch (mailError) {
+            // 🛡️ Si Gmail falla, el código NO explota, entra aquí
+            console.error("⚠️ Error de correo, pero el registro continúa:", mailError.message);
+        }
 
-        res.status(201).json({
-            mensaje: 'Registro exitoso. Revisa tu bandeja de entrada para activar tu cuenta.',
+        // 🚩 8. SIEMPRE RESPONDE ÉXITO (Status 201), SIN IMPORTAR SI EL CORREO SALIÓ O NO
+        return res.status(201).json({
+            mensaje: 'Registro exitoso. Revisa tu bandeja de entrada para activar tu cuenta (si no llega, contacta a tu Sensei).',
             rol: rolAsignado
         });
 
     } catch (error) {
-        console.error('Error en el registro:', error);
+        // Solo entra aquí si la Base de Datos o algo crítico falla
+        console.error('Error crítico en el registro:', error);
         res.status(500).json({ mensaje: 'Error interno al forjar el registro.' });
     }
 };
@@ -170,9 +173,9 @@ exports.verificarCorreo = async (req, res) => {
         // Respondemos con éxito (status 200) para que el Frontend no se asuste.
         if (usuario.verificado || usuario.verificado === 1) {
             console.log("♻️  Petición duplicada detectada, pero el usuario ya estaba activo.");
-            return res.status(200).json({ 
+            return res.status(200).json({
                 mensaje: "¡Sello activo! Redirigiendo a la academia...",
-                yaEstabaActivo: true 
+                yaEstabaActivo: true
             });
         }
 
