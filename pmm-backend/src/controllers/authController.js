@@ -1,20 +1,13 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const axios = require('axios');
 const Usuario = require('../models/Usuario');
 const { OAuth2Client } = require('google-auth-library');
 const db = require('../config/database');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// 🛡️ CONFIGURACIÓN DEL TRANSPORTADOR DE CORREOS
-const transporter = nodemailer.createTransport({
-    service: 'gmail', // 👈 ESTA ES LA CLAVE: Configura todo automáticamente y evita IPv6
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS // 
-    }
-});
 
 // ESCUDO: Validación de Buzón con Hunter.io
 const validarBuzonReal = async (correo) => {
@@ -61,92 +54,74 @@ exports.register = async (req, res) => {
     try {
         const { nombre_completo, correo, password } = req.body;
 
-        // 🛡️ 1. VERIFICACIÓN DE BUZÓN EN TIEMPO REAL (Falla Rápido)
         const buzonEsReal = await validarBuzonReal(correo);
         if (!buzonEsReal) {
-            return res.status(400).json({
-                mensaje: 'Este buzón de correo no existe o no puede recibir mensajes. Usa un correo real.'
-            });
+            return res.status(400).json({ mensaje: 'Este buzón de correo no existe. Usa uno real.' });
         }
 
-        // 🛡️ 2. Verificación de duplicados
         const usuarioExistente = await Usuario.findOne({ where: { correo } });
         if (usuarioExistente) {
             return res.status(400).json({ mensaje: 'El correo ya está registrado.' });
         }
 
-        // 🚩 3. LÓGICA DE ASIGNACIÓN DE ROLES POR DOMINIO INSTITUCIONAL
         const dominioUsuario = correo.split('@')[1].toLowerCase();
         const dominiosPermitidosStr = process.env.DOMINIOS_DOCENTES || '';
         const dominiosDocente = dominiosPermitidosStr.split(',');
+        let rolAsignado = dominiosDocente.includes(dominioUsuario) ? 'docente' : 'estudiante';
 
-        let rolAsignado = 'estudiante'; // Por defecto, todos son estudiantes
-
-        if (dominiosDocente.includes(dominioUsuario)) {
-            rolAsignado = 'docente'; // ¡Sensei detectado mediante correo UNIAJC!
-        }
-
-        // 🔐 4. Encriptación
         const salt = await bcrypt.genSalt(10);
         const hash_password = await bcrypt.hash(password, salt);
 
-        // 💾 5. Guardar en Base de Datos (Inactivo por defecto)
         const nuevoUsuario = await Usuario.create({
             nombre_completo,
             correo,
             hash_password,
-            rol: rolAsignado, // 👈 Aplicamos la decisión del motor inteligente
-            verificado: false,
-            estado: 'Inactivo', // 👈 Sincronizamos con el Dashboard del docente
+            rol: rolAsignado,
+            verificado: true,
+            estado: 'activo',
             fecha_registro: new Date()
         });
 
-        // 🎟️ 6. Generar Token de Verificación (1 hora)
         const tokenVerificacion = jwt.sign(
             { id_usuario: nuevoUsuario.id_usuario },
             process.env.JWT_SECRET,
             { expiresIn: '1h' }
         );
 
-        // ✉️ 7. Enviar el correo de activación notificando el ROL
-        //(Evita el Error 500)
         const urlConfirmacion = `${process.env.FRONTEND_URL}/verificar-correo/${tokenVerificacion}`;
 
+        // ✉️ ENVÍO CON RESEND (Adiós ENETUNREACH)
         try {
-            await transporter.sendMail({
-                from: `"Academia PMM" <${process.env.SMTP_USER}>`,
+            await resend.emails.send({
+                from: 'Academia PMM <onboarding@resend.dev>', // 👈 Importante: Usar este mientras verificas tu dominio
                 to: correo,
                 subject: "⚔️ Confirma tu Sello Ninja en PMM Interactivo",
                 html: `
-                    <div style="font-family: sans-serif; text-align: center; padding: 20px;">
+                    <div style="font-family: sans-serif; text-align: center; padding: 20px; border-top: 5px solid #C5A059;">
                         <h2>¡Bienvenido a la Aldea, ${nombre_completo}!</h2>
-                        <p>El sistema te ha reconocido bajo el rango de <b>${rolAsignado.toUpperCase()}</b>.</p>
-                        <p>Para activar tu chakra, confirma que este correo es real.</p>
-                        <a href="${urlConfirmacion}" style="background: #C5A059; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 15px;">
-                            Verificar mi Correo
+                        <p>Has sido reconocido como: <b>${rolAsignado.toUpperCase()}</b>.</p>
+                        <p>Haz clic abajo para activar tu cuenta y comenzar el entrenamiento:</p>
+                        <a href="${urlConfirmacion}" style="background: #C5A059; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 15px; font-weight: bold;">
+                            VERIFICAR MI CORREO
                         </a>
                     </div>
                 `
             });
-            console.log(`📧 Correo de activación enviado con éxito a ${correo}`);
+            console.log(`📧 Correo enviado vía Resend a ${correo}`);
         } catch (mailError) {
-            // 🛡️ Si Gmail falla, el código NO explota, entra aquí
-            console.error("⚠️ Error de correo, pero el registro continúa:", mailError.message);
+            console.error("⚠️ Fallo en Resend:", mailError.message);
         }
 
-        // 🚩 8. SIEMPRE RESPONDE ÉXITO (Status 201), SIN IMPORTAR SI EL CORREO SALIÓ O NO
         return res.status(201).json({
-            mensaje: 'Registro exitoso. Revisa tu bandeja de entrada para activar tu cuenta (si no llega, contacta a tu Sensei).',
+            mensaje: 'Registro exitoso. Revisa tu correo para activar tu cuenta.',
             rol: rolAsignado
         });
 
     } catch (error) {
-        // Solo entra aquí si la Base de Datos o algo crítico falla
         console.error('Error crítico en el registro:', error);
         res.status(500).json({ mensaje: 'Error interno al forjar el registro.' });
     }
 };
-
 // -----------------------------------------------------------------
 // 2. Nuevo Endpoint: Confirmar Correo (Versión Antigolpes 🛡️)
 // -----------------------------------------------------------------
@@ -328,54 +303,42 @@ exports.googleLogin = async (req, res) => {
 exports.forgotPassword = async (req, res) => {
     try {
         const { correo } = req.body;
-
-        // 1. Buscamos al ninja en la base de datos
         const usuario = await Usuario.findOne({ where: { correo } });
 
-        // 🛡️ REGLA DE SEGURIDAD: Respondemos "Éxito" incluso si no existe. 
         if (!usuario) {
-            return res.status(200).json({
-                mensaje: 'Si el correo existe en nuestra aldea, hemos enviado un pergamino de recuperación.'
-            });
+            return res.status(200).json({ mensaje: 'Si el correo existe, recibirás instrucciones.' });
         }
 
-        // 2. Generamos un Token de Vida Corta (15 minutos)
         const tokenRecuperacion = jwt.sign(
             { id_usuario: usuario.id_usuario },
             process.env.JWT_SECRET,
             { expiresIn: '15m' }
         );
 
-        // 3. Preparamos el enlace hacia tu Frontend de React
         const urlRecuperacion = `${process.env.FRONTEND_URL}/reset-password/${tokenRecuperacion}`;
 
-        // 4. Enviamos el correo
-        await transporter.sendMail({
-            from: `"Seguridad PMM" <${process.env.SMTP_USER}>`,
+        // 🗝️ ENVÍO CON RESEND
+        await resend.emails.send({
+            from: 'Seguridad PMM <onboarding@resend.dev>',
             to: correo,
             subject: "🗝️ Recupera tu acceso a PMM Interactivo",
             html: `
                 <div style="font-family: sans-serif; text-align: center; padding: 20px;">
-                    <h2>Recuperación de Sello (Contraseña)</h2>
-                    <p>Hola ${usuario.nombre_completo}, hemos recibido una petición para restaurar tu acceso.</p>
-                    <a href="${urlRecuperacion}" style="background: #8B0000; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 15px;">
+                    <h2>Recuperación de Sello</h2>
+                    <p>Hola ${usuario.nombre_completo}, usa este enlace para cambiar tu contraseña:</p>
+                    <a href="${urlRecuperacion}" style="background: #8B0000; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 15px;">
                         Restablecer Contraseña
                     </a>
-                    <p style="font-size: 12px; color: #666; margin-top: 20px;">
-                        ⚠️ Este enlace es de un solo uso y se autodestruirá en 15 minutos.<br>
-                        Si no fuiste tú, ignora este mensaje.
-                    </p>
+                    <p style="font-size: 11px; color: #666; margin-top: 20px;">Expira en 15 minutos.</p>
                 </div>
             `
         });
 
-        res.status(200).json({
-            mensaje: 'Si el correo existe en nuestra aldea, hemos enviado un pergamino de recuperación.'
-        });
+        res.status(200).json({ mensaje: 'Correo de recuperación enviado.' });
 
     } catch (error) {
         console.error('Error en forgotPassword:', error);
-        res.status(500).json({ mensaje: 'Error interno al procesar la solicitud.' });
+        res.status(500).json({ mensaje: 'Error interno.' });
     }
 };
 
