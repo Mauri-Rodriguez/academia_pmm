@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
+const { act } = require('react');
 
 const Usuario = sequelize.define('Usuario', {
     id_usuario: {
@@ -57,7 +58,7 @@ const Usuario = sequelize.define('Usuario', {
     },
     verificado: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false
+        defaultValue: 'Activo'
     }
 }, {
     tableName: 'usuarios',

@@ -57,88 +57,44 @@ const validarBuzonReal = async (correo) => {
 // -----------------------------------------------------------------
 // 1. Registro Manual (Con Filtro Institucional y ZeroBounce)
 // -----------------------------------------------------------------
-exports.register = async (req, res) => {
+exports.registrar = async (req, res) => {
     try {
-        const { nombre_completo, correo, password } = req.body;
+        const { nombre_completo, correo, password, rol } = req.body;
 
-        // 🛡️ 1. VERIFICACIÓN DE BUZÓN EN TIEMPO REAL (Falla Rápido)
-        const buzonEsReal = await validarBuzonReal(correo);
-        if (!buzonEsReal) {
-            return res.status(400).json({
-                mensaje: 'Este buzón de correo no existe o no puede recibir mensajes. Usa un correo real.'
-            });
+        // 1. Validación básica de formato (Sustituye a ZeroBounce)
+        const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!regexCorreo.test(correo)) {
+            return res.status(400).json({ error: "El formato del correo no es válido." });
         }
 
-        // 🛡️ 2. Verificación de duplicados
-        const usuarioExistente = await Usuario.findOne({ where: { correo } });
-        if (usuarioExistente) {
-            return res.status(400).json({ mensaje: 'El correo ya está registrado.' });
+        // 2. Verificar si ya existe
+        const existe = await Usuario.findOne({ where: { correo } });
+        if (existe) {
+            return res.status(400).json({ error: "Este correo ya está registrado en la academia." });
         }
 
-        // 🚩 3. LÓGICA DE ASIGNACIÓN DE ROLES POR DOMINIO INSTITUCIONAL
-        const dominioUsuario = correo.split('@')[1].toLowerCase();
-        const dominiosPermitidosStr = process.env.DOMINIOS_DOCENTES || '';
-        const dominiosDocente = dominiosPermitidosStr.split(',');
-
-        let rolAsignado = 'estudiante'; // Por defecto, todos son estudiantes
-
-        if (dominiosDocente.includes(dominioUsuario)) {
-            rolAsignado = 'docente'; // ¡Sensei detectado mediante correo UNIAJC!
-        }
-
-        // 🔐 4. Encriptación
-        const salt = await bcrypt.genSalt(10);
-        const hash_password = await bcrypt.hash(password, salt);
-
-        // 💾 5. Guardar en Base de Datos (Inactivo por defecto)
+        // 3. Crear el usuario (Nace activo por los defaultValue del modelo)
         const nuevoUsuario = await Usuario.create({
             nombre_completo,
             correo,
-            hash_password,
-            rol: rolAsignado, // 👈 Aplicamos la decisión del motor inteligente
-            verificado: false,
-            estado: 'Inactivo', // 👈 Sincronizamos con el Dashboard del docente
-            fecha_registro: new Date()
+            password: await bcrypt.hash(password, 10),
+            rol: rol || 'estudiante'
         });
 
-        // 🎟️ 6. Generar Token de Verificación (1 hora)
-        const tokenVerificacion = jwt.sign(
-            { id_usuario: nuevoUsuario.id_usuario },
-            process.env.JWT_SECRET,
-            { expiresIn: '1h' }
-        );
+        console.log(`✅ Nuevo ninja registrado: ${correo}`);
 
-        // ✉️ 7. Enviar el correo de activación notificando el ROL
-        const urlConfirmacion = `${process.env.FRONTEND_URL}/verificar-correo/${tokenVerificacion}`;
-
-        await transporter.sendMail({
-            from: `"Academia PMM" <${process.env.SMTP_USER}>`,
-            to: correo,
-            subject: "⚔️ Confirma tu Sello Ninja en PMM Interactivo",
-            html: `
-                <div style="font-family: sans-serif; text-align: center; padding: 20px;">
-                    <h2>¡Bienvenido a la Aldea, ${nombre_completo}!</h2>
-                    <p>El sistema te ha reconocido bajo el rango de <b>${rolAsignado.toUpperCase()}</b>.</p>
-                    <p>Para activar tu chakra y entrar al sistema, debes confirmar que este correo es real.</p>
-                    <a href="${urlConfirmacion}" style="background: #C5A059; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 15px;">
-                        Verificar mi Correo
-                    </a>
-                    <p style="font-size: 12px; color: #666; margin-top: 20px;">Este enlace expirará en 1 hora.</p>
-                </div>
-            `
-        });
-
-        res.status(201).json({
-            mensaje: 'Registro exitoso. Revisa tu bandeja de entrada para activar tu cuenta.',
-            rol: rolAsignado
+        // 4. Respuesta inmediata para redirección
+        return res.status(201).json({
+            success: true,
+            mensaje: "¡Registro exitoso! Bienvenido a la academia.",
+            id_usuario: nuevoUsuario.id_usuario
         });
 
     } catch (error) {
-        console.error('Error en el registro:', error);
-        res.status(500).json({ mensaje: 'Error interno al forjar el registro.' });
+        console.error("❌ Error crítico en registro:", error);
+        res.status(500).json({ error: "Hubo un problema al crear tu perfil ninja." });
     }
 };
-
 // -----------------------------------------------------------------
 // 2. Nuevo Endpoint: Confirmar Correo (Versión Antigolpes 🛡️)
 // -----------------------------------------------------------------
