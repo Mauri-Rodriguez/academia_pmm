@@ -91,7 +91,7 @@ const PerfilEstudiante = () => {
 
     const marcarLeida = async (id) => {
         try {
-            await api.put(`/estudiante/notificaciones/${id}/leida`);
+            await api.put(`/api/estudiante/notificaciones/${id}/leida`);
             setNotificaciones(notificaciones.map(n => n.id_notificacion === id ? { ...n, leida: 1 } : n));
         } catch (err) { console.error("Error al marcar como leída:", err); }
     };

@@ -9,7 +9,7 @@ const VisualizadorModulo = () => {
 
     useEffect(() => {
         const cargarLecciones = async () => {
-            const res = await api.get(`/estudiante/modulo/${id_modulo}`);
+            const res = await api.get(`/api/estudiante/modulo/${id_modulo}`);
             setLecciones(res.data);
         };
         cargarLecciones();

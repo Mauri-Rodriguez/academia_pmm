@@ -14,7 +14,7 @@ const ReporteDetalladoEstudiante = () => {
     useEffect(() => {
         const cargarDetalles = async () => {
             try {
-                const res = await api.get(`/docente/reporte-individual/${id}`);
+                const res = await api.get(`/api/docente/reporte-individual/${id}`);
                 setEstudiante(res.data);
             } catch (error) {
                 console.error("❌ Error al recuperar el expediente:", error);

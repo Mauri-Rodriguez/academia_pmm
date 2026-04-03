@@ -66,7 +66,7 @@ const ForoComunidad = () => {
 
     const cargarComentarios = async (id_post) => {
         try {
-            const res = await api.get(`/estudiante/foro/comentarios/${id_post}`);
+            const res = await api.get(`/api/estudiante/foro/comentarios/${id_post}`);
             setComentarios(Array.isArray(res.data) ? res.data : []);
         } catch (err) { console.error("Error al cargar respuestas"); }
     };
@@ -112,7 +112,7 @@ const ForoComunidad = () => {
         if (archivoEdicion) formData.append('imagen', archivoEdicion);
 
         try {
-            await api.put(`/estudiante/foro/post/${misionAEditar.id_post}`, formData);
+            await api.put(`/api/estudiante/foro/post/${misionAEditar.id_post}`, formData);
             setMostrarModalEdicion(false);
             cargarForo();
         } catch (err) { alert("Error al editar."); }
@@ -121,7 +121,7 @@ const ForoComunidad = () => {
     const eliminarMision = async (id_post) => {
         if (!window.confirm("¿Eliminar esta misión permanentemente?")) return;
         try {
-            await api.delete(`/estudiante/foro/post/${id_post}`);
+            await api.delete(`/api/estudiante/foro/post/${id_post}`);
             cargarForo();
             setMisionSeleccionada(null);
         } catch (err) { alert("Error al borrar."); }
@@ -146,7 +146,7 @@ const ForoComunidad = () => {
     const guardarEdicionComentario = async (id_comentario) => {
         if (!textoComentarioEditado.trim()) return;
         try {
-            await api.put(`/estudiante/foro/comentario/${id_comentario}`, {
+            await api.put(`/api/estudiante/foro/comentario/${id_comentario}`, {
                 comentario: textoComentarioEditado
             });
             setComentarioEditando(null);
@@ -159,7 +159,7 @@ const ForoComunidad = () => {
     const eliminarComentario = async (id_comentario) => {
         if (!window.confirm("¿Borrar respuesta?")) return;
         try {
-            await api.delete(`/estudiante/foro/comentario/${id_comentario}`);
+            await api.delete(`/api/estudiante/foro/comentario/${id_comentario}`);
             cargarComentarios(misionSeleccionada.id_post);
         } catch (err) { console.error("Error al borrar"); }
     };

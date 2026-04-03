@@ -28,7 +28,7 @@ const TutorOraculo = ({ idPreguntaActual }) => {
         setLoading(true);
 
         try {
-            const res = await api.post('/estudiante/tutor-ia', {
+            const res = await api.post('/api/estudiante/tutor-ia', {
                 id_pregunta: idPreguntaActual,
                 mensaje_estudiante: textoUsuario
             });

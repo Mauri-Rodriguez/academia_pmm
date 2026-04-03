@@ -12,7 +12,7 @@ const VerificarCorreo = () => {
         const confirmar = async () => {
             try {
                 // Llama al nuevo endpoint del backend
-                await api.get(`/auth/verificar/${token}`);
+                await api.get(`/api/auth/verificar/${token}`);
                 setEstado('exito');
                 setTimeout(() => navigate('/'), 4000); // Lo manda al login en 4 seg
             } catch (error) {

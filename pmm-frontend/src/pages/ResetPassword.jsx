@@ -25,7 +25,7 @@ const ResetPassword = () => {
         setLoading(true);
         try {
             // Enviamos la nueva contraseña al backend usando el token
-            const res = await api.post(`/auth/reset-password/${token}`, { nuevaPassword: password });
+            const res = await api.post(`/api/auth/reset-password/${token}`, { nuevaPassword: password });
             
             setMensaje({ texto: res.data.mensaje, tipo: 'success' });
             
