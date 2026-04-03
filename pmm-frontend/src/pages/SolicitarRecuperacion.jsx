@@ -18,7 +18,7 @@ const SolicitarRecuperacion = () => {
         setLoading(true);
         try {
             // Llamamos a la ruta del backend que creamos en el paso anterior
-            const res = await api.post('/auth/forgot-password', { correo });
+            const res = await api.post('/api/auth/forgot-password', { correo });
             setMensaje({ texto: res.data.mensaje, tipo: 'success' });
             setCorreo(''); // Limpiamos el input
         } catch (err) {

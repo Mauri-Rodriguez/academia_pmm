@@ -84,7 +84,7 @@ const ForoComunidad = () => {
         if (archivo) formData.append('imagen', archivo);
 
         try {
-            await api.post('/estudiante/foro/crear', formData);
+            await api.post('/api/estudiante/foro/crear', formData);
             setNuevaMision({ titulo: '', contenido: '' });
             setArchivo(null);
             setMostrarModal(false);
@@ -132,7 +132,7 @@ const ForoComunidad = () => {
         if (!nuevoComentario.trim()) return;
         setEnviandoComentario(true);
         try {
-            await api.post('/estudiante/foro/comentar', {
+            await api.post('/api/estudiante/foro/comentar', {
                 id_post: misionSeleccionada.id_post,
                 comentario: nuevoComentario
             });

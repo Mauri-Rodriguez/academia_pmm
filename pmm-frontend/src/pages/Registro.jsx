@@ -60,7 +60,7 @@ const Registro = () => {
         try {
             // Enviamos la petición al backend. 
             // 🚩 RECUERDA: El backend ignorará el "rol" que envíes y lo asignará según el dominio.
-            const res = await api.post('/auth/register', {
+            const res = await api.post('/api/auth/register', {
                 nombre_completo: formData.nombre_completo,
                 correo: formData.correo,
                 password: formData.password

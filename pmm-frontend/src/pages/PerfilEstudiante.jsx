@@ -75,7 +75,7 @@ const PerfilEstudiante = () => {
         setSubiendoFoto(true);
 
         try {
-            const res = await api.post('/estudiante/perfil/avatar', formData);
+            const res = await api.post('/api/estudiante/perfil/avatar', formData);
             const nuevaUrl = `${import.meta.env.VITE_API_URL}${res.data.url}`;
 
             setFotoPerfil(nuevaUrl);

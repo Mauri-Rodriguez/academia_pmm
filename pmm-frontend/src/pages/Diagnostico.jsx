@@ -43,8 +43,8 @@ const finalizarPrueba = async () => {
             }
         });
 
-        // 🚩 CORRECCIÓN DE URL: Cambiado a '/estudiante/diagnostico'
-        const res = await api.post('/estudiante/diagnostico', {
+        // 🚩 CORRECCIÓN DE URL: Cambiado a '/api/estudiante/diagnostico'
+        const res = await api.post('/api/estudiante/diagnostico', {
             puntaje: aciertosContados 
         });
 

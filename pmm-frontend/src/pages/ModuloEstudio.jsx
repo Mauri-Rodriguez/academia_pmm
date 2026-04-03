@@ -61,7 +61,7 @@ const ModuloEstudio = () => {
     const procesarFinalizacionOficial = async () => {
         try {
             // Sincronización con el backend: Evalúa insignias y rangos
-            const res = await api.post('/estudiante/finalizar', { 
+            const res = await api.post('/api/estudiante/finalizar', { 
                 id_modulo, 
                 puntaje_final: ejercicios.length 
             });
@@ -98,7 +98,7 @@ const ModuloEstudio = () => {
             if (!modoRepaso && !esFinDeModulo) {
                 const nuevoPorcentaje = Math.round((nuevoIndice / ejercicios.length) * 100);
                 try {
-                    await api.post('/estudiante/actualizar-progreso', { id_modulo, porcentaje: nuevoPorcentaje });
+                    await api.post('/api/estudiante/actualizar-progreso', { id_modulo, porcentaje: nuevoPorcentaje });
                 } catch (err) {
                     console.error("Error guardando progreso:", err);
                 }
@@ -121,7 +121,7 @@ const ModuloEstudio = () => {
             setBloqueado(false);
         } else {
             try {
-                const res = await api.post('/estudiante/registrar-fallo', {
+                const res = await api.post('/api/estudiante/registrar-fallo', {
                     id_pregunta: ejActual.id_ejercicio,
                     respuesta_dada: itemSeleccionado.campo 
                 });

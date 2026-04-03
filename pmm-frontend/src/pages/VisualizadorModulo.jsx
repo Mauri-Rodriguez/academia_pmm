@@ -16,7 +16,7 @@ const VisualizadorModulo = () => {
     }, [id_modulo]);
 
     const marcarCompletada = async () => {
-        await api.post('/estudiante/completar-leccion', {
+        await api.post('/api/estudiante/completar-leccion', {
             id_leccion: lecciones[leccionActual].id_leccion
         });
         if (leccionActual < lecciones.length - 1) {

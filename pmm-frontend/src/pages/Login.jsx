@@ -79,8 +79,10 @@ const handleSubmit = async (e) => {
 
         setLoading(true);
         try {
-            const res = await api.post('/auth/login', { correo, password });
-            // 🚩 AQUÍ ESTÁ EL CAMBIO: Agregamos res.data.requiereDiagnostico
+            // ✅ EL CAMBIO MÁGICO: Le agregamos el /api al inicio de la ruta
+            const res = await api.post('/api/auth/login', { correo, password });
+            
+            // 🚩 Sincronizamos la identidad
             guardarSesion(res.data.token, res.data.usuario, res.data.requiereDiagnostico);
         } catch (err) {
             setError(err.response?.data?.mensaje || 'Error en las credenciales del dojo.');
