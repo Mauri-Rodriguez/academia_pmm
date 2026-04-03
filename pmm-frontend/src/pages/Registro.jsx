@@ -67,7 +67,7 @@ const Registro = () => {
             });
 
             setMensaje({ 
-                texto: '¡Registro exitoso! Revisa tu correo para activar tu cuenta y entrar al dojo.', 
+                texto: '¡Registro exitoso! ', 
                 tipo: 'success' 
             });
             

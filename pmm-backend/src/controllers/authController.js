@@ -42,8 +42,8 @@ exports.register = async (req, res) => {
             correo,
             hash_password,
             rol: rolAsignado,
-            verificado: false,
-            estado: 'Inactivo',
+            verificado: true, // Auto-verificado para evitar fricción inicial, se puede cambiar a false si se desea verificación manual
+            estado: 'Activo',
             fecha_registro: new Date()
         });
 

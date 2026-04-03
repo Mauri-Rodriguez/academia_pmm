@@ -56,7 +56,7 @@ const handleGoogleSuccess = async (credentialResponse) => {
             // 🚩 Sincronizamos la sesión con el diagnóstico
             guardarSesion(res.data.token, res.data.usuario, res.data.requiereDiagnostico);
         } catch (err) {
-            setError(err.response?.data?.mensaje || 'El sello de Google no es válido en esta aldea.');
+            setError(err.response?.data?.mensaje || 'El sello de Google no es válido.');
         } finally {
             setLoading(false);
         }
