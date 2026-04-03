@@ -14,14 +14,15 @@ const progresoRoutes = require('./routes/progresoRoutes');
 const app = express();
 
 // === MIDDLEWARES ===
+// === MIDDLEWARES ===
 app.use(cors({
     origin: [
-        'http://localhost:5173', // Permite pruebas locales
-        process.env.FRONTEND_URL, // Toma la URL que pusiste en las variables de Railway
-        'https://lucky-croquembouche-2c8b48.netlify.app' // 👈 REEMPLAZA ESTO por tu link real de Netlify
+        'http://localhost:5173', 
+        process.env.FRONTEND_URL, 
+        'https://lucky-croquembouche-2c8b48.netlify.app' 
     ],
-    credentials: true, // Vital para que funcionen los tokens y cookies de login
-    methods: ['GET', 'POST', 'PUT', 'DELETE']
+    credentials: true, 
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'] // Permite todos los métodos HTTP necesarios para tu API
 }));
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
