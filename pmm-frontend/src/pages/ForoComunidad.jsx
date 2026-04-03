@@ -260,7 +260,7 @@ const ForoComunidad = () => {
                                 {post.imagen_url && (
                                     <div className="bg-black/40 border-y border-white/5 flex justify-center overflow-hidden">
                                         <img 
-                                            src={`http://localhost:3001${post.imagen_url}`} 
+                                            src={`${import.meta.env.VITE_API_URL}${post.imagen_url}`}
                                             className="max-w-full h-auto max-h-[500px] object-contain hover:scale-[1.02] transition-transform duration-500" 
                                             alt="evidencia" 
                                         />
@@ -313,7 +313,7 @@ const ForoComunidad = () => {
                             <h2 className="text-3xl text-white font-bold mb-6 italic leading-tight">"{misionSeleccionada.titulo}"</h2>
                             <p className="text-slate-300 text-base leading-relaxed mb-8">{misionSeleccionada.contenido}</p>
                             {misionSeleccionada.imagen_url && (
-                                <img src={`http://localhost:3001${misionSeleccionada.imagen_url}`} className="w-full rounded-xl mb-8 border border-white/10 shadow-lg" alt="evidencia" />
+                                <img src={`${import.meta.env.VITE_API_URL}${misionSeleccionada.imagen_url}`} className="w-full rounded-xl mb-8 border border-white/10 shadow-lg" alt="evidencia" />
                             )}
                         </div>
 

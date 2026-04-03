@@ -6,7 +6,7 @@ import api from '../api/api';
 const PerfilEstudiante = () => {
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
-    
+
     // ESTADOS DINÁMICOS
     const [datos, setDatos] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -22,7 +22,7 @@ const PerfilEstudiante = () => {
         return colores[Math.abs(hash) % colores.length];
     };
 
-useEffect(() => {
+    useEffect(() => {
         const inicializarPerfil = async () => {
             try {
                 const [resUser, resDash, resNotif] = await Promise.all([
@@ -34,9 +34,9 @@ useEffect(() => {
                 // 🚩 EXTRAEMOS LOS DATOS EXACTAMENTE COMO EN EL DASHBOARD
                 const dashStats = resDash.data?.estadisticas || {};
                 const puntajeIA = dashStats.puntaje || 0;
-                
+
                 // 🚩 USAMOS TU FÓRMULA ORIGINAL: (puntaje / 13) * 100
-                const efectividadReal = Math.round((puntajeIA / 13) * 100) || 0; 
+                const efectividadReal = Math.round((puntajeIA / 13) * 100) || 0;
                 const misionesCompletas = dashStats.modulos_completados || 0;
 
                 setDatos({
@@ -47,9 +47,9 @@ useEffect(() => {
                     ejercicios_completados: misionesCompletas,
                     efectividad: efectividadReal // 👈 Ahora sí coincidirá
                 });
-                
+
                 if (resUser.data?.foto_perfil) {
-                    const urlCompleta = `http://localhost:3001${resUser.data.foto_perfil}`;
+                    const urlCompleta = `${import.meta.env.VITE_API_URL}${resUser.data.foto_perfil}`;
                     setFotoPerfil(urlCompleta);
                     localStorage.setItem('user_avatar', urlCompleta);
                 } else if (localStorage.getItem('user_avatar')) {
@@ -76,8 +76,8 @@ useEffect(() => {
 
         try {
             const res = await api.post('/estudiante/perfil/avatar', formData);
-            const nuevaUrl = `http://localhost:3001${res.data.url}`;
-            
+            const nuevaUrl = `${import.meta.env.VITE_API_URL}${res.data.url}`;
+
             setFotoPerfil(nuevaUrl);
             localStorage.setItem('user_avatar', nuevaUrl);
             alert("¡Sello de identidad actualizado!");
@@ -107,8 +107,8 @@ useEffect(() => {
 
     return (
         <div className="min-h-screen bg-[#05070A] p-4 md:p-10 flex flex-col items-center">
-            
-            <button 
+
+            <button
                 onClick={() => navigate('/estudiante/dashboard')}
                 className="self-start mb-6 text-slate-500 hover:text-shinobi-gold transition-all text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2"
             >
@@ -116,12 +116,12 @@ useEffect(() => {
             </button>
 
             <div className="max-w-4xl w-full grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
+
                 {/* COLUMNA IZQUIERDA: PERFIL DINÁMICO */}
                 <div className="lg:col-span-1 space-y-6">
                     <div className="bg-[#f4f1e1] p-8 rounded-sm shadow-2xl border-t-8 border-shinobi-gold text-center relative overflow-hidden">
                         <div className="relative group mx-auto w-32 h-32 mb-6">
-                            <div 
+                            <div
                                 className="w-full h-full bg-shinobi-dark rounded-2xl flex items-center justify-center border-4 border-shinobi-gold shadow-xl overflow-hidden relative cursor-pointer"
                                 onClick={() => fileInputRef.current.click()}
                                 style={{ backgroundColor: !fotoPerfil ? generarColorAvatar(nombre) : 'transparent' }}
@@ -131,7 +131,7 @@ useEffect(() => {
                                 ) : (
                                     <span className="text-6xl text-white font-scholar">{nombre.charAt(0)}</span>
                                 )}
-                                
+
                                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                     <span className="text-[10px] text-white font-bold uppercase tracking-widest text-center px-2">Cambiar Sello</span>
                                 </div>
@@ -142,7 +142,7 @@ useEffect(() => {
 
                         <h3 className="text-2xl font-scholar text-shinobi-dark leading-tight">{nombre}</h3>
                         <p className="text-[10px] text-slate-500 uppercase font-bold mt-1">{email}</p>
-                        
+
                         <div className="mt-4 px-3 py-1 bg-shinobi-dark text-shinobi-gold text-[9px] font-black uppercase rounded-full inline-block">
                             Rango: {datos.rango_actual}
                         </div>
@@ -172,7 +172,7 @@ useEffect(() => {
 
                 {/* COLUMNA DERECHA: NOTIFICACIONES Y SEGURIDAD */}
                 <div className="lg:col-span-2 space-y-6">
-                    
+
                     <div className="bg-[#0E121C] border border-white/5 rounded-2xl overflow-hidden shadow-xl">
                         <div className="p-4 bg-white/5 border-b border-white/5 flex justify-between items-center">
                             <h4 className="text-xs font-scholar text-white uppercase tracking-widest">Buzón de Alertas</h4>
@@ -182,8 +182,8 @@ useEffect(() => {
                         </div>
                         <div className="max-h-[400px] overflow-y-auto">
                             {notificaciones.length > 0 ? notificaciones.map((n) => (
-                                <div 
-                                    key={n.id_notificacion} 
+                                <div
+                                    key={n.id_notificacion}
                                     onClick={() => marcarLeida(n.id_notificacion)}
                                     className={`p-4 border-b border-white/5 flex items-start gap-4 hover:bg-white/5 transition-colors cursor-pointer ${!n.leida ? 'border-l-4 border-l-shinobi-gold bg-shinobi-gold/5' : ''}`}
                                 >
