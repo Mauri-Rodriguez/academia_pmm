@@ -30,7 +30,7 @@ const Diagnostico = sequelize.define('Diagnostico', {
         allowNull: false
     }
 }, {
-    tableName: 'Diagnostico',
+    tableName: 'diagnostico',
     timestamps: false
 });
 

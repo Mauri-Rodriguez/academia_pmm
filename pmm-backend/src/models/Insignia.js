@@ -7,6 +7,6 @@ const Insignia = sequelize.define('Insignia', {
     nombre_insignia: { type: DataTypes.STRING, allowNull: false },
     descripcion: { type: DataTypes.TEXT },
     imagen: { type: DataTypes.STRING }
-}, { tableName: 'Insignias', timestamps: false });
+}, { tableName: 'insignias', timestamps: false });
 
 module.exports = Insignia;

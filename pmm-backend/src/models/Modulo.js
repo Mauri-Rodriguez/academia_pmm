@@ -33,7 +33,7 @@ const Modulo = sequelize.define('Modulo', {
         }
     }
 }, {
-    tableName: 'Modulos',
+    tableName: 'modulos',
     timestamps: false
 });
 

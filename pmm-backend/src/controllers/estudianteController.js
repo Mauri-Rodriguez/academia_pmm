@@ -190,7 +190,7 @@ exports.finalizarModulo = async (req, res) => {
 
         // 2. OTORGAR INSIGNIA DE LA MISIÓN
         await db.query(
-            'INSERT IGNORE INTO Usuarios_Insignias (id_usuario, id_insignia, fecha_otorgada) VALUES (?, ?, NOW())',
+            'INSERT IGNORE INTO usuarios_insignias (id_usuario, id_insignia, fecha_otorgada) VALUES (?, ?, NOW())',
             { replacements: [id_usuario, id_modulo], transaction: t }
         );
 
@@ -267,7 +267,7 @@ exports.finalizarModulo = async (req, res) => {
                 `, { replacements: [nuevoRango, id_usuario], transaction: t });
 
                 const idMedalla = nuevoRango.includes('Chunin') ? 101 : 102;
-                await db.query('INSERT IGNORE INTO Usuarios_Insignias (id_usuario, id_insignia, fecha_otorgada) VALUES (?, ?, NOW())',
+                await db.query('INSERT IGNORE INTO usuarios_insignias (id_usuario, id_insignia, fecha_otorgada) VALUES (?, ?, NOW())',
                     { replacements: [id_usuario, idMedalla], transaction: t });
             }
         }
@@ -346,7 +346,7 @@ exports.guardarDiagnostico = async (req, res) => {
                 // Entregar insignias de los módulos saltados
                 const valoresInsigniasMod = ids.map(id => `(${id_usuario}, ${id}, NOW())`).join(', ');
                 await db.query(`
-                    INSERT IGNORE INTO Usuarios_Insignias (id_usuario, id_insignia, fecha_otorgada)
+                    INSERT IGNORE INTO usuarios_insignias (id_usuario, id_insignia, fecha_otorgada)
                     VALUES ${valoresInsigniasMod}
                 `, { transaction: t });
             }
@@ -356,7 +356,7 @@ exports.guardarDiagnostico = async (req, res) => {
         if (medallasDeRango.length > 0) {
             const valoresMedallas = medallasDeRango.map(idMedalla => `(${id_usuario}, ${idMedalla}, NOW())`).join(', ');
             await db.query(`
-                INSERT IGNORE INTO Usuarios_Insignias (id_usuario, id_insignia, fecha_otorgada)
+                INSERT IGNORE INTO usuarios_insignias    (id_usuario, id_insignia, fecha_otorgada)
                 VALUES ${valoresMedallas}
             `, { transaction: t });
         }
@@ -450,7 +450,6 @@ exports.obtenerDashboard = async (req, res) => {
             Modulo.findAll({
                 where: {
                     nivel: {
-                        // NOTA: Asegúrate de tener importado 'Op' de Sequelize al inicio de tu archivo: 
                         // const { Op } = require('sequelize');
                         [Op.in]: nivelIA.includes('Jonin')
                             ? ['Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto']
@@ -463,7 +462,7 @@ exports.obtenerDashboard = async (req, res) => {
                 order: [[db.literal("FIELD(nivel, 'Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto')")], ['id_modulo', 'ASC']]
             }),
             db.query(`SELECT * FROM Insignias`, { type: db.QueryTypes.SELECT }),
-            db.query(`SELECT id_insignia FROM Usuarios_Insignias WHERE id_usuario = ?`, { replacements: [id_usuario], type: db.QueryTypes.SELECT })
+            db.query(`SELECT id_insignia FROM usuarios_insignias WHERE id_usuario = ?`, { replacements: [id_usuario], type: db.QueryTypes.SELECT })
         ]);
 
         const puntajeInicial = diag[0] ? diag[0].puntaje_obtenido : 0;
@@ -653,7 +652,7 @@ exports.obtenerSugerenciaIA = async (req, res) => {
 
 exports.obtenerLogrosEstudiante = async (req, res) => {
     try {
-        const insignias = await db.query(`SELECT i.*, ui.fecha_otorgada FROM Usuarios_Insignias ui JOIN Insignias i ON ui.id_insignia = i.id_insignia WHERE ui.id_usuario = ?`, { replacements: [extraerIdUsuario(req)], type: db.QueryTypes.SELECT });
+        const insignias = await db.query(`SELECT i.*, ui.fecha_otorgada FROM usuarios_insignias ui JOIN insignias i ON ui.id_insignia = i.id_insignia WHERE ui.id_usuario = ?`, { replacements: [extraerIdUsuario(req)], type: db.QueryTypes.SELECT });
         res.json(insignias);
     } catch (error) { res.status(500).json({ error: "Falla insignias" }); }
 };

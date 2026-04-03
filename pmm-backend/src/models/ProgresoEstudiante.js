@@ -34,7 +34,7 @@ const ProgresoEstudiante = sequelize.define('ProgresoEstudiante', {
         allowNull: false
     }
 }, {
-    tableName: 'Progreso_Estudiante',
+    tableName: 'progreso_estudiante',
     timestamps: false
 });
 

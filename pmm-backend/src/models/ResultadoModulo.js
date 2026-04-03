@@ -8,6 +8,6 @@ const ResultadoModulo = sequelize.define('ResultadoModulo', {
     id_modulo: { type: DataTypes.INTEGER, allowNull: false },
     puntaje_final: { type: DataTypes.FLOAT, allowNull: false },
     fecha_finalizacion: { type: DataTypes.DATE, allowNull: false }
-}, { tableName: 'Resultados_Modulos', timestamps: false });
+}, { tableName: 'resultados_modulos', timestamps: false });
 
 module.exports = ResultadoModulo;
