@@ -9,13 +9,17 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // 🛡️ CONFIGURACIÓN DEL TRANSPORTADOR DE CORREOS
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: "smtp.gmail.com",
+    port: 587, // El cambio clave
+    secure: false, // Obligatorio al usar el 587
     auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
+    },
+    tls: {
+        rejectUnauthorized: false
     }
 });
-
 
 // ESCUDO: Validación de Buzón con Hunter.io
 const validarBuzonReal = async (correo) => {
@@ -56,7 +60,7 @@ const validarBuzonReal = async (correo) => {
     }
 };
 // -----------------------------------------------------------------
-// 1. Registro Manual (Con Filtro Institucional y ZeroBounce)
+// 1. Registro Manual (Con Filtro Institucional y Hunter.io)
 // -----------------------------------------------------------------
 exports.register = async (req, res) => {
     try {
