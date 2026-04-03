@@ -296,7 +296,10 @@ exports.guardarDiagnostico = async (req, res) => {
         if (!id_usuario) return res.status(401).json({ error: "Sesión expirada" });
 
         // 1. Clasificación por IA
-        const resIA = await axios.post('http://127.0.0.1:5000/api/ia/recomendar-ruta', { puntaje });
+        // 1. Clasificación por IA (Sincronizado con Railway)
+        const iaBaseUrl = process.env.IA_SERVICE_URL || 'http://127.0.0.1:5000';
+
+        const resIA = await axios.post(`${iaBaseUrl}/api/ia/recomendar-ruta`, { puntaje });
         const mapa = { 0: 'Genin (Iniciado)', 1: 'Chunin (Guerrero)', 2: 'Jonin (Maestro)' };
         const rango = mapa[resIA.data.nivel_id] || 'Genin (Iniciado)';
 
@@ -315,10 +318,10 @@ exports.guardarDiagnostico = async (req, res) => {
         else if (rango.includes('Jonin')) {
             nivelesAConvalidar = ['Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio'];
             medallasDeRango = [101, 102]; // Medalla Chunin y Medalla Jonin
-        }else if (rango.includes('Kage')) {
+        } else if (rango.includes('Kage')) {
             nivelesAConvalidar = [
-                'Genin (Iniciado)', 'Bajo', 
-                'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 
+                'Genin (Iniciado)', 'Bajo',
+                'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio',
                 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto'
             ];
             medallasDeRango = [101, 102, 103]; // Todas las medallas de rango
