@@ -15,6 +15,8 @@ const Login = () => {
     const DOMINIOS_PERMITIDOS = [
         'uniajc.edu.co', 
         'estudiante.uniajc.edu.co', 
+        'profesores.uniajc.edu.co', 
+        'admon.uniajc.edu.co',
         'gmail.com', 
         'outlook.com', 
         'hotmail.com'
