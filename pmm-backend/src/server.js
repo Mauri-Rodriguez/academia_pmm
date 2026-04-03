@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const diagnosticoRoutes = require('./routes/diagnosticoRoutes');
 require('dotenv').config();
-
+const path = require('path');
 const sequelize = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
 const estudianteRoutes = require('./routes/estudianteRoutes');
@@ -39,7 +39,7 @@ app.use('/api/estudiante', estudianteRoutes);
 app.use('/api/docente', docenteRoutes);
 app.use('/api/ejercicios', ejercicioRoutes);
 app.use('/api/progreso', progresoRoutes);
-
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 // === ARRANQUE DEL SERVIDOR (Solo si no estamos en modo de prueba) ===
 // === ARRANQUE DEL SERVIDOR ===
 const PORT = process.env.PORT || 3001;
