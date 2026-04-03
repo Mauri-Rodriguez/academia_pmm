@@ -18,7 +18,7 @@ app.use(cors({
     origin: [
         'http://localhost:5173', // Permite pruebas locales
         process.env.FRONTEND_URL, // Toma la URL que pusiste en las variables de Railway
-        'https://AQUI_TU_URL_DE_NETLIFY.netlify.app' // 👈 REEMPLAZA ESTO por tu link real de Netlify
+        'https://lucky-croquembouche-2c8b48.netlify.app' // 👈 REEMPLAZA ESTO por tu link real de Netlify
     ],
     credentials: true, // Vital para que funcionen los tokens y cookies de login
     methods: ['GET', 'POST', 'PUT', 'DELETE']

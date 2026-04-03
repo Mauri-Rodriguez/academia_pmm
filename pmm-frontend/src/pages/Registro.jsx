@@ -18,8 +18,8 @@ const Registro = () => {
     // 🛡️ DOMINIOS PERMITIDOS ACTUALIZADOS (Incluye Profesores y Administrativos UNIAJC)
     const DOMINIOS_PERMITIDOS = [
         'estudiante.uniajc.edu.co', 
-        'profesores.uniajc.edu.co', // 👈 Nuevo: Senseis
-        'admon.uniajc.edu.co',      // 👈 Nuevo: Administrativos
+        'profesores.uniajc.edu.co', 
+        'admon.uniajc.edu.co',      
         'gmail.com', 
         'outlook.com', 
         'hotmail.com'
