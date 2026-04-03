@@ -11,7 +11,7 @@ const Biblioteca = () => {
         const cargarBiblioteca = async () => {
             try {
                 // 🚩 Esta ruta ahora filtra por jerarquía en el Backend
-                const res = await api.get('/estudiante/biblioteca');
+                const res = await api.get('/api/estudiante/biblioteca');
                 setPergaminos(res.data);
             } catch (err) {
                 console.error("Error cargando biblioteca:", err);

@@ -13,7 +13,7 @@ const Diagnostico = () => {
     useEffect(() => {
         const obtenerPreguntas = async () => {
             try {
-                const res = await api.get('/estudiante/preguntas-diagnostico');
+                const res = await api.get('/api/estudiante/preguntas-diagnostico');
                 setPreguntas(res.data);
             } catch (err) {
                 console.error("Error al invocar el banco de preguntas:", err);

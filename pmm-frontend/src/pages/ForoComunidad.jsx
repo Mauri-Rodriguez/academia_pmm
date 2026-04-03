@@ -58,7 +58,7 @@ const ForoComunidad = () => {
 
     const cargarForo = async () => {
         try {
-            const res = await api.get('/estudiante/foro/temas');
+            const res = await api.get('/api/estudiante/foro/temas');
             setPosts(Array.isArray(res.data) ? res.data : []);
         } catch (err) { console.error("Error al cargar muro"); } 
         finally { setLoading(false); }

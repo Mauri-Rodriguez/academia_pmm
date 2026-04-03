@@ -11,7 +11,7 @@ const HistorialErrores = () => {
     useEffect(() => {
         const cargarErrores = async () => {
             try {
-                const res = await api.get('/estudiante/errores-recientes');
+                const res = await api.get('/api/estudiante/errores-recientes');
                 setErrores(res.data);
             } catch (err) {
                 console.error("Error al cargar la bitácora de fallos:", err);

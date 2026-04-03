@@ -19,8 +19,8 @@ const DashboardEstudiante = () => {
 const cargarDatosDashboard = useCallback(async () => {
         try {
             const [resDash, resErrores] = await Promise.all([
-                api.get('/estudiante/dashboard'),
-                api.get('/estudiante/errores-recientes')
+               api.get('/api/estudiante/dashboard'),
+                api.get('/api/estudiante/errores-recientes')
             ]);
 
             setDatos(resDash.data);
@@ -47,7 +47,7 @@ const cargarDatosDashboard = useCallback(async () => {
 
     const obtenerPrediccionIA = async () => {
         try {
-            const resIA = await api.get('/estudiante/sugerencia-ia');
+            const resIA = await api.get('/api/estudiante/sugerencia-ia');
             setSugerenciaIA(resIA.data);
         } catch (err) {
             console.error("Error silencioso en IA");

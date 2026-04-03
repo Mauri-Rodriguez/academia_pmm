@@ -9,7 +9,7 @@ const LibroDeBingo = () => {
     useEffect(() => {
         const fetchRanking = async () => {
             try {
-                const res = await api.get('/estudiante/ranking');
+                const res = await api.get('/api/estudiante/ranking');
                 setRanking(res.data);
             } catch (err) {
                 console.error("Error al cargar el ranking:", err);

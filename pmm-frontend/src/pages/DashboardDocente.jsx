@@ -17,7 +17,7 @@ const DashboardDocente = () => {
     const traerDatos = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await api.get('/docente/resumen-estudiantes');
+            const res = await api.get('/api/docente/resumen-estudiantes');
             setEstudiantes(res.data.reporte || []);
         } catch (error) {
             console.error("❌ Error en la red de monitoreo:", error);
@@ -34,7 +34,7 @@ const DashboardDocente = () => {
     const descargarExcel = async () => {
         try {
             setDescargando(true);
-            const response = await api.get('/docente/descargar-excel', { responseType: 'blob' });
+            const response = await api.get('/api/docente/descargar-excel', { responseType: 'blob' });
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;

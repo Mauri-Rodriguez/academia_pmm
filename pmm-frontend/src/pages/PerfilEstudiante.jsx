@@ -26,9 +26,9 @@ const PerfilEstudiante = () => {
         const inicializarPerfil = async () => {
             try {
                 const [resUser, resDash, resNotif] = await Promise.all([
-                    api.get('/estudiante/perfil/datos').catch(() => ({ data: {} })),
-                    api.get('/estudiante/dashboard').catch(() => ({ data: {} })),
-                    api.get('/estudiante/notificaciones').catch(() => ({ data: [] }))
+                    api.get('/api/estudiante/perfil/datos').catch(() => ({ data: {} })),
+                    api.get('/api/estudiante/dashboard').catch(() => ({ data: {} })),
+                    api.get('/api/estudiante/notificaciones').catch(() => ({ data: [] }))
                 ]);
 
                 // 🚩 EXTRAEMOS LOS DATOS EXACTAMENTE COMO EN EL DASHBOARD
