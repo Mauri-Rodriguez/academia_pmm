@@ -14,7 +14,7 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // -----------------------------------------------------------------
 // 1. Registro Manual (Rápido, Seguro y Sin Fricción)
 // -----------------------------------------------------------------
-exports.registrar = async (req, res) => {
+exports.register = async (req, res) => {
     try {
         const { nombre_completo, correo, password, rol } = req.body;
 
