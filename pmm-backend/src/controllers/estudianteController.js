@@ -194,16 +194,52 @@ exports.finalizarModulo = async (req, res) => {
 
         // 🚩 [CORREGIDO & BLINDADO] OBTENER INFO DE LA INSIGNIA
         // Usamos 'imagen' para coincidir con tu modelo de Sequelize
-        let insigniaInfo = null;
-        try {
-            const [resInsignia] = await db.query(
-                'SELECT nombre_insignia as nombre, imagen as url_imagen FROM insignias WHERE id_insignia = ? LIMIT 1',
-                { replacements: [id_modulo], type: db.QueryTypes.SELECT, transaction: t }
-            );
-            insigniaInfo = resInsignia;
-        } catch (errInsignia) {
-            console.warn("⚠️ Advertencia: No se pudo cargar la info de la insignia, pero el proceso continúa.");
-        }
+ // 🚩 DENTRO DE finalizarModulo (Sustituye el bloque de insigniaInfo)
+let insigniaInfo = null;
+try {
+    const [resInsignia] = await db.query(
+        'SELECT id_insignia, nombre_insignia as nombre FROM insignias WHERE id_insignia = ? LIMIT 1',
+        { replacements: [id_modulo], type: db.QueryTypes.SELECT, transaction: t }
+    );
+
+    if (resInsignia) {
+        // Diccionario de Emojis basado en tu lista
+        const emojis = {
+            1: "🧬",  // Genio del Álgebra
+            2: "🔍",  // Cazador de Incógnitas
+            3: "📉",  // Maestro de la Recta
+            4: "📐",  // Señor de los Triángulos
+            5: "♾️",  // Dominador del Infinito
+            6: "📈",  // Rey de la Tasa de Cambio
+            7: "📊",  // Sabio del Área
+            10: "⚖️", // Guerrero del Equilibrio
+            11: "🗺️", // Estratega del Plano
+            12: "🏹", // Arquitecto de Parábolas
+            14: "🌑", // Místico de las Sombras
+            15: "🌱", // Viajero del Crecimiento
+            16: "🛡️", // Guardián de la Aproximación
+            17: "🧪", // Alquimista de Senos
+            18: "🔭", // Visionario del Horizonte
+            19: "👣", // Rastreador de Cambios
+            20: "⛓️", // Sabio de las Reglas Reales
+            21: "🎯", // Estratega de lo Absoluto
+            22: "🏰", // Guardián de las Áreas
+            23: "✂️", // Estratega de la División
+            24: "🧊", // Conquistador de Sólidos
+            25: "🏺", // Gran Maestre de Cilindros
+            101: "⚔️", // Sello Chunin
+            102: "⛩️", // Sello Jonin
+            103: "👑"  // Sello Kage
+        };
+
+        insigniaInfo = {
+            nombre: resInsignia.nombre,
+            url_imagen: emojis[resInsignia.id_insignia] || "🏅" // 🚩 Mandamos el emoji aquí
+        };
+    }
+} catch (errInsignia) {
+    console.warn("⚠️ Error al asignar emoji de insignia:", errInsignia);
+}
 
         // 3. CONSULTAR ESTADO ACTUAL
         const usuario = await Usuario.findByPk(id_usuario, { transaction: t });

@@ -197,17 +197,24 @@ const ModuloEstudio = () => {
     return (
         <div className="min-h-screen bg-[#05070A] text-slate-200 relative overflow-hidden pb-20 selection:bg-shinobi-gold/30">
             
-            {/* 🚩 OVERLAY ÉPICO: INSIGNIA OBTENIDA */}
+            {/* 🚩 OVERLAY ÉPICO: INSIGNIA OBTENIDA (RENDERIZANDO EMOJI) */}
             <AnimatePresence>
                 {insigniaNueva && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 backdrop-blur-2xl">
                         <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} className="text-center">
-                            <div className="relative inline-block mb-8">
-                                <div className="absolute -inset-10 bg-shinobi-gold/30 blur-3xl rounded-full animate-pulse"></div>
-                                <img src={insigniaNueva.url_imagen || '/assets/badge-gold.png'} alt="Insignia" className="w-56 h-56 md:w-80 md:h-80 object-contain relative z-10 drop-shadow-[0_0_40px_rgba(197,160,89,0.8)]" />
+                            <div className="relative inline-block mb-10">
+                                {/* Aura de poder detrás del emoji */}
+                                <div className="absolute -inset-10 bg-shinobi-gold/20 blur-3xl rounded-full animate-pulse"></div>
+                                {/* El Emoji en lugar de la imagen */}
+                                <span className="text-[120px] md:text-[180px] relative z-10 drop-shadow-[0_0_50px_rgba(197,160,89,0.6)] block leading-none">
+                                    {insigniaNueva.url_imagen || '🏅'}
+                                </span>
                             </div>
                             <h2 className="text-4xl md:text-6xl font-scholar text-white tracking-tighter uppercase mb-2">¡Sello de Honor!</h2>
                             <p className="text-shinobi-gold font-black tracking-[0.5em] text-sm md:text-xl uppercase">{insigniaNueva.nombre}</p>
+                            <p className="text-slate-500 font-mono text-[10px] mt-4 uppercase tracking-widest">
+                                Insignia añadida a tu cofre de méritos
+                            </p>
                         </motion.div>
                     </motion.div>
                 )}
