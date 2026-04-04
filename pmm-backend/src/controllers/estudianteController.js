@@ -192,18 +192,24 @@ exports.finalizarModulo = async (req, res) => {
             { replacements: [id_usuario, id_modulo], transaction: t }
         );
 
-        // 🚩 [NUEVO] OBTENER INFO DE LA INSIGNIA PARA EL FRONTEND
-        // Esto es lo que disparará la animación épica en el cliente
-        const [insigniaInfo] = await db.query(
-            'SELECT nombre_insignia as nombre, imagen_url as url_imagen FROM insignias WHERE id_insignia = ?',
-            { replacements: [id_modulo], type: db.QueryTypes.SELECT, transaction: t }
-        );
+        // 🚩 [CORREGIDO & BLINDADO] OBTENER INFO DE LA INSIGNIA
+        // Usamos 'imagen' para coincidir con tu modelo de Sequelize
+        let insigniaInfo = null;
+        try {
+            const [resInsignia] = await db.query(
+                'SELECT nombre_insignia as nombre, imagen as url_imagen FROM insignias WHERE id_insignia = ? LIMIT 1',
+                { replacements: [id_modulo], type: db.QueryTypes.SELECT, transaction: t }
+            );
+            insigniaInfo = resInsignia;
+        } catch (errInsignia) {
+            console.warn("⚠️ Advertencia: No se pudo cargar la info de la insignia, pero el proceso continúa.");
+        }
 
         // 3. CONSULTAR ESTADO ACTUAL
         const usuario = await Usuario.findByPk(id_usuario, { transaction: t });
         const rangoActual = usuario?.rango_actual || usuario?.rango || 'Genin (Iniciado)';
 
-        // 4. CONTEO DE MÓDULOS AGRUPADOS POR TIER (Tu lógica inteligente)
+        // 4. CONTEO DE MÓDULOS AGRUPADOS POR TIER
         let nivelesAEvaluar = [];
         if (rangoActual.includes('Genin')) nivelesAEvaluar = ['Genin (Iniciado)', 'Bajo'];
         else if (rangoActual.includes('Chunin')) nivelesAEvaluar = ['Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio'];
@@ -270,7 +276,7 @@ exports.finalizarModulo = async (req, res) => {
         // 🚩 RESPUESTA FINALIZADA PARA EL FRONTEND
         res.json({
             success: true,
-            insignia: insigniaInfo || null, // 👈 Si hay insignia, el frontend dispara el confeti
+            insignia: insigniaInfo || null,
             ascendio: ascendio,
             detallesAscenso: ascendio ? { nuevoNivel: nuevoRango, mensaje: mensajeAscenso } : null
         });
