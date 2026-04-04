@@ -170,13 +170,16 @@ exports.obtenerPreguntasDiagnostico = async (req, res) => {
 };
 
 // 🚩 FUNCIÓN: FINALIZAR MÓDULO, OTORGAR INSIGNIA Y EVALUAR ASCENSO
+// ... (Tus importaciones y helpers se mantienen iguales)
+
+// 🚩 FUNCIÓN ACTUALIZADA: FINALIZAR MÓDULO CON RECOMPENSA VISUAL
 exports.finalizarModulo = async (req, res) => {
     const t = await db.transaction();
     try {
         const { id_modulo } = req.body;
         const id_usuario = extraerIdUsuario(req);
 
-        // 1. FORZAR EL 100% EN PROGRESO (Añadido intentos_realizados para prevenir errores de constraint)
+        // 1. FORZAR EL 100% EN PROGRESO
         await db.query(`
             INSERT INTO progreso_estudiante (id_usuario, id_modulo, porcentaje_avance, intentos_realizados, ultima_actualizacion)
             VALUES (?, ?, 100, 1, NOW())
@@ -189,20 +192,22 @@ exports.finalizarModulo = async (req, res) => {
             { replacements: [id_usuario, id_modulo], transaction: t }
         );
 
-        // 3. CONSULTAR ESTADO ACTUAL (Damos prioridad a rango_actual si existe)
+        // 🚩 [NUEVO] OBTENER INFO DE LA INSIGNIA PARA EL FRONTEND
+        // Esto es lo que disparará la animación épica en el cliente
+        const [insigniaInfo] = await db.query(
+            'SELECT nombre_insignia as nombre, imagen_url as url_imagen FROM insignias WHERE id_insignia = ?',
+            { replacements: [id_modulo], type: db.QueryTypes.SELECT, transaction: t }
+        );
+
+        // 3. CONSULTAR ESTADO ACTUAL
         const usuario = await Usuario.findByPk(id_usuario, { transaction: t });
         const rangoActual = usuario?.rango_actual || usuario?.rango || 'Genin (Iniciado)';
 
-        // 🚩 4. CONTEO DE MÓDULOS AGRUPADOS POR TIER (La clave para no estancarse)
+        // 4. CONTEO DE MÓDULOS AGRUPADOS POR TIER (Tu lógica inteligente)
         let nivelesAEvaluar = [];
-        if (rangoActual.includes('Genin')) {
-            nivelesAEvaluar = ['Genin (Iniciado)', 'Bajo'];
-        } else if (rangoActual.includes('Chunin')) {
-            // Para ser Jonin, evaluamos que haya cumplido todo lo básico y lo intermedio
-            nivelesAEvaluar = ['Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio'];
-        } else if (rangoActual.includes('Jonin')) {
-            nivelesAEvaluar = ['Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto'];
-        }
+        if (rangoActual.includes('Genin')) nivelesAEvaluar = ['Genin (Iniciado)', 'Bajo'];
+        else if (rangoActual.includes('Chunin')) nivelesAEvaluar = ['Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio'];
+        else if (rangoActual.includes('Jonin')) nivelesAEvaluar = ['Genin (Iniciado)', 'Bajo', 'Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto'];
 
         const modulosDelNivel = await Modulo.findAll({
             where: { nivel: { [Op.in]: nivelesAEvaluar } },
@@ -224,13 +229,11 @@ exports.finalizarModulo = async (req, res) => {
             transaction: t
         });
 
-        console.log(`[SISTEMA ASCENSO] Usuario: ${id_usuario} | Rango: ${rangoActual} | Progreso: ${completadosDelNivel}/${totalMisionesNivel}`);
-
         let ascendio = false;
         let nuevoRango = rangoActual;
         let mensajeAscenso = "";
 
-        // 🚩 5. LÓGICA DE ASCENSO BLINDADA (Usando .includes para mayor tolerancia)
+        // 5. LÓGICA DE ASCENSO
         if (totalMisionesNivel > 0 && completadosDelNivel === totalMisionesNivel) {
             if (rangoActual.includes('Genin')) {
                 nuevoRango = 'Chunin (Guerrero)';
@@ -241,40 +244,33 @@ exports.finalizarModulo = async (req, res) => {
                 mensajeAscenso = "¡Increíble! Has alcanzado el rango de Maestro Jonin.";
                 ascendio = true;
             } else if (rangoActual.includes('Jonin')) {
-                nuevoRango = 'Kage (Leyenda)'; // O el nombre supremo que prefieras
-                mensajeAscenso = "¡Has dominado todas las artes matemáticas de la academia! Ahora eres una Leyenda viva.";
+                nuevoRango = 'Kage (Leyenda)';
+                mensajeAscenso = "¡Has dominado todas las artes! Ahora eres una Leyenda viva.";
                 ascendio = true;
             }
 
             if (ascendio) {
-                // 1. Actualizamos el rango en todas las tablas
-                await db.query(`
-                    UPDATE usuarios 
-                    SET rango = ?, rango_actual = ? 
-                    WHERE id_usuario = ?
-                `, { replacements: [nuevoRango, nuevoRango, id_usuario], transaction: t });
+                await db.query('UPDATE usuarios SET rango = ?, rango_actual = ? WHERE id_usuario = ?', 
+                    { replacements: [nuevoRango, nuevoRango, id_usuario], transaction: t });
+                
+                await db.query('UPDATE diagnostico SET nivel_asignado = ? WHERE id_usuario = ? ORDER BY fecha_realizacion DESC LIMIT 1', 
+                    { replacements: [nuevoRango, id_usuario], transaction: t });
 
-                await db.query(`
-                    UPDATE diagnostico 
-                    SET nivel_asignado = ? 
-                    WHERE id_usuario = ? 
-                    ORDER BY fecha_realizacion DESC LIMIT 1
-                `, { replacements: [nuevoRango, id_usuario], transaction: t });
-
-                // 🚩 2. LÓGICA DE MEDALLAS DE RANGO CORREGIDA
-                let idMedalla = 101; // Default Chunin
-                if (nuevoRango.includes('Jonin')) idMedalla = 102;
-                if (nuevoRango.includes('Kage') || nuevoRango.includes('Leyenda')) idMedalla = 103; // 🏅 EL SELLO KAGE
+                let idMedallaRango = 101; 
+                if (nuevoRango.includes('Jonin')) idMedallaRango = 102;
+                if (nuevoRango.includes('Kage')) idMedallaRango = 103;
 
                 await db.query('INSERT IGNORE INTO usuarios_insignias (id_usuario, id_insignia, fecha_otorgada) VALUES (?, ?, NOW())',
-                    { replacements: [id_usuario, idMedalla], transaction: t });
+                    { replacements: [id_usuario, idMedallaRango], transaction: t });
             }
         }
 
         await t.commit();
 
+        // 🚩 RESPUESTA FINALIZADA PARA EL FRONTEND
         res.json({
             success: true,
+            insignia: insigniaInfo || null, // 👈 Si hay insignia, el frontend dispara el confeti
             ascendio: ascendio,
             detallesAscenso: ascendio ? { nuevoNivel: nuevoRango, mensaje: mensajeAscenso } : null
         });
