@@ -29,7 +29,7 @@ const extraerIdUsuario = (req) => {
     } catch (err) { return null; }
 };
 
-// --- ⚡ GESTIÓN DE ERRORES CON GEMINI 2.50 FLASH-LITE ---
+// --- ⚡ GESTIÓN DE ERRORES CON GEMINI 2.50 FLASH-LITE (100% TIEMPO REAL) ---
 
 exports.registrarFallo = async (req, res) => {
     try {
@@ -47,57 +47,31 @@ exports.registrarFallo = async (req, res) => {
         };
         const columnaDada = formatColumna(respuesta_dada);
 
-        // -------------------------------------------------------------
-        // 🚩 SISTEMA DE CACHÉ ESTRICTO (Ahorro Masivo de Tokens)
-        // -------------------------------------------------------------
-        // Buscamos si ALGUIEN ya falló esta pregunta con esta misma opción
-        const cache = await HistorialError.findOne({
-            where: {
-                id_pregunta: id_pregunta,
-                respuesta_dada: columnaDada,
-                explicacion_ia: {
-                    [Op.and]: [
-                        { [Op.not]: null }, // Que no esté vacía
-                        { [Op.notLike]: '%El oráculo está meditando%' } // Que no sea un error reciclado
-                    ]
-                }
-            },
-            order: [['fecha_error', 'DESC']] // Traemos la mejor y más reciente
-        });
-
+        // 3. INVOCAR SIEMPRE A LA IA 
         let explicacionIA = "";
+        const textoRespuestaAlumno = preguntaDB[columnaDada];
+        const textoRespuestaCorrecta = preguntaDB[formatColumna(preguntaDB.respuesta_correcta)];
 
-        if (cache && cache.explicacion_ia) {
-            // Reciclamos la explicación sin tocar la API de Google
-            explicacionIA = cache.explicacion_ia;
-            console.log(`♻️ [CACHÉ NINJA] Token ahorrado. Explicación reciclada para la pregunta ${id_pregunta}.`);
-        } else {
-            // No existe en caché, invocamos a la IA
-            const textoRespuestaAlumno = preguntaDB[columnaDada];
-            const textoRespuestaCorrecta = preguntaDB[formatColumna(preguntaDB.respuesta_correcta)];
+        const prompt = `Actúa como un maestro sabio y con gran experiencia en matemáticas. 
+        El estudiante falló en: "${preguntaDB.pregunta}". 
+        Eligió: "${textoRespuestaAlumno}". 
+        La respuesta correcta era: "${textoRespuestaCorrecta}". 
+        Explica el error en máximo 3 oraciones breves y termina con un "🥷🏾Pista Ninja:" motivadora. 
+        IMPORTANTE: No uses signos de peso ($), ni formato LaTeX. Escribe las fórmulas como texto normal (ejemplo: f(x) = 0).
+        No des la respuesta correcta nunca, guía su lógica fomentando el pensamiento crítico.`;
 
-            const prompt = `Actúa como un maestro sabio y con gran experiencia en matemáticas. 
-            El estudiante falló en: "${preguntaDB.pregunta}". 
-            Eligió: "${textoRespuestaAlumno}". 
-            La respuesta correcta era: "${textoRespuestaCorrecta}". 
-            Explica el error en máximo 3 oraciones breves y termina con un "🥷🏾Pista Ninja:" motivadora. 
-            IMPORTANTE: No uses signos de peso ($), ni formato LaTeX. Escribe las fórmulas como texto normal (ejemplo: f(x) = 0).
-            No des la respuesta correcta nunca, guía su lógica fomentando el pensamiento crítico.`;
-
-            try {
-                // 🚩 Usamos 2.5-flash-lite para evitar límites de cuota rápidos
-                const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-                const result = await model.generateContent(prompt);
-                explicacionIA = result.response.text();
-                console.log(`⚡ [GEMINI API] Nueva explicación generada para la pregunta ${id_pregunta}.`);
-            } catch (err) {
-                console.error("❌ Error en Gemini:", err.message);
-                explicacionIA = "El oráculo está meditando en las montañas. Analiza el sello por tu cuenta.";
-            }
+        try {
+            // 🚩 Usamos 2.5-flash-lite para respuestas hiperrápidas
+            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+            const result = await model.generateContent(prompt);
+            explicacionIA = result.response.text();
+            console.log(`⚡ [GEMINI API] Oráculo consultado en tiempo real para la pregunta ${id_pregunta}.`);
+        } catch (err) {
+            console.error("❌ Error en Gemini:", err.message);
+            explicacionIA = "El oráculo está meditando en las montañas. Analiza el sello por tu cuenta.";
         }
-        // -------------------------------------------------------------
 
-        // 3. Guardar SIEMPRE en el historial para no perder las analíticas del profesor
+        // 4. Guardar SIEMPRE en el historial para no perder las analíticas del profesor
         await HistorialError.create({
             id_usuario,
             id_pregunta,
@@ -169,8 +143,6 @@ exports.obtenerPreguntasDiagnostico = async (req, res) => {
     } catch (e) { res.status(500).json({ mensaje: 'Error' }); }
 };
 
-// 🚩 FUNCIÓN: FINALIZAR MÓDULO, OTORGAR INSIGNIA Y EVALUAR ASCENSO
-// ... (Tus importaciones y helpers se mantienen iguales)
 
 // 🚩 FUNCIÓN ACTUALIZADA: FINALIZAR MÓDULO CON RECOMPENSA VISUAL
 exports.finalizarModulo = async (req, res) => {
@@ -192,9 +164,9 @@ exports.finalizarModulo = async (req, res) => {
             { replacements: [id_usuario, id_modulo], transaction: t }
         );
 
-        // 🚩 [CORREGIDO & BLINDADO] OBTENER INFO DE LA INSIGNIA
-        // Usamos 'imagen' para coincidir con tu modelo de Sequelize
- // 🚩 DENTRO DE finalizarModulo (Sustituye el bloque de insigniaInfo)
+        // 3. EVALUAR ASCENSO DE RANGO
+        //
+        // Aquí podrías llamar a una función que revise el progreso total del usuario y actualice su rango si es necesario.
 let insigniaInfo = null;
 try {
     const [resInsignia] = await db.query(
@@ -203,7 +175,7 @@ try {
     );
 
     if (resInsignia) {
-        // Diccionario de Emojis basado en tu lista
+        // Diccionario de Emojis 
         const emojis = {
             1: "🧬",  // Genio del Álgebra
             2: "🔍",  // Cazador de Incógnitas
