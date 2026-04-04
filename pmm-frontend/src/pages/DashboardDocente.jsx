@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Users, Activity, ChevronRight, Loader2, FileDown, RefreshCw } from 'lucide-react';
+import { Search, Users, Activity, ChevronRight, Loader2, FileDown, RefreshCw, ShieldCheck, Zap } from 'lucide-react';
 import api from '../api/api';
 
 const DashboardDocente = () => {
@@ -50,57 +50,37 @@ const DashboardDocente = () => {
         }
     };
 
-    // 🚩 MOTOR DE CÁLCULO DE CONEXIÓN
-// 🚩 MOTOR DE CÁLCULO DE CONEXIÓN (BLINDADO CONTRA ZONAS HORARIAS)
-// 🚩 MOTOR DE CÁLCULO DE CONEXIÓN (BLINDADO CONTRA ZONAS HORARIAS)
     const evaluarConexion = (fechaISO, estado) => {
-        // 1. PRIORIDAD TOTAL: Si fue suspendido manualmente
         if (estado === 'Inactivo') {
             return { texto: 'Inactivo', estilo: 'border-rose-500/30 text-rose-400 bg-rose-500/5', dot: 'bg-rose-500' };
         }
-
-        // 2. Si nunca ha entrado (null o vacío)
         if (!fechaISO) {
             return { texto: 'Sin Registro', estilo: 'border-slate-500/30 text-slate-400 bg-slate-500/5', dot: 'bg-slate-500' };
         }
-
         try {
-            // 3. Sacamos el día exacto de hoy en Colombia (Ej: "2026-04-02")
             const hoyStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
-            
-            // 4. Convertimos la fecha de la BD a un objeto real y la pasamos a Colombia
-            // Reemplazamos espacio por T y aseguramos la Z para que JS entienda que viene de MySQL en UTC
             const fechaValida = fechaISO.includes('T') ? fechaISO : fechaISO.replace(' ', 'T') + 'Z';
             const ultimaConexion = new Date(fechaValida);
             const ultimaStr = ultimaConexion.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
 
-            // 5. Comparación matemática exacta
             if (hoyStr === ultimaStr) {
-                return { texto: 'En la Aldea', estilo: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5', dot: 'bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]' };
+                return { texto: 'En Línea', estilo: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5', dot: 'bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]' };
             }
-
-            // Forzamos ambas fechas neutrales a UTC para restar días con precisión
             const utcHoy = new Date(`${hoyStr}T00:00:00Z`);
             const utcUltima = new Date(`${ultimaStr}T00:00:00Z`);
             const diferenciaDias = Math.round((utcHoy - utcUltima) / (1000 * 60 * 60 * 24));
 
-            // Si la diferencia es negativa (error de reloj) o menor a 0, asumimos hoy
             if (diferenciaDias <= 0) {
-                 return { texto: 'En la Aldea', estilo: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5', dot: 'bg-emerald-500 animate-pulse' };
+                 return { texto: 'En Línea', estilo: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5', dot: 'bg-emerald-500 animate-pulse' };
             } else if (diferenciaDias > 0 && diferenciaDias <= 3) {
-                return { texto: `Ausente (${diferenciaDias}d)`, estilo: 'border-amber-500/30 text-amber-400 bg-amber-500/5', dot: 'bg-amber-500' };
+                return { texto: `Hace ${diferenciaDias}d`, estilo: 'border-amber-500/30 text-amber-400 bg-amber-500/5', dot: 'bg-amber-500' };
             } else {
-                return { texto: `Desaparecido (${diferenciaDias}d)`, estilo: 'border-rose-500/30 text-rose-400 bg-rose-500/5', dot: 'bg-rose-500' };
+                return { texto: `Inactivo ${diferenciaDias}d`, estilo: 'border-rose-500/30 text-rose-400 bg-rose-500/5', dot: 'bg-rose-500' };
             }
         } catch (e) {
-            // Si la fecha viene corrupta desde la BD
             return { texto: 'Error Fecha', estilo: 'border-slate-500/30 text-slate-400 bg-slate-500/5', dot: 'bg-slate-500' };
         }
     };
-
-    const navItems = [
-        { label: 'PANEL MAESTRO', path: '/docente/dashboard', icon: '⛩️' },
-    ];
 
     const estudiantesFiltrados = estudiantes.filter(est => {
         const nombre = est.nombre?.toLowerCase() || '';
@@ -111,192 +91,213 @@ const DashboardDocente = () => {
     });
 
     if (loading) return (
-        <div className="min-h-screen bg-[#05070A] flex flex-col items-center justify-center p-4 text-center">
-            <div className="w-16 h-16 border-4 border-shinobi-gold/20 border-t-shinobi-gold rounded-full animate-spin mb-4 shadow-[0_0_30px_rgba(197,160,89,0.2)]"></div>
-            <div className="text-shinobi-gold font-scholar animate-pulse tracking-[0.5em] text-[10px] uppercase">Sincronizando Censo Ninja...</div>
+        <div className="min-h-screen bg-[#020408] flex flex-col items-center justify-center p-4">
+            <div className="relative">
+                <div className="w-20 h-20 border-2 border-shinobi-gold/10 border-t-shinobi-gold rounded-full animate-spin"></div>
+                <ShieldCheck className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-shinobi-gold animate-pulse" size={32} />
+            </div>
+            <div className="mt-6 text-shinobi-gold font-scholar tracking-[0.6em] text-[10px] uppercase">Encriptando Datos del Censo...</div>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-[#05070A] flex text-slate-300 font-modern overflow-hidden selection:bg-shinobi-gold/30">
+        <div className="min-h-screen bg-[#05070A] flex text-slate-300 font-modern selection:bg-shinobi-gold/30">
             
+            {/* Sidebar con diseño serio */}
             <aside 
                 onMouseEnter={() => setIsExpanded(true)}
                 onMouseLeave={() => setIsExpanded(false)}
-                className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] bg-[#080C14] border-r border-white/5 flex flex-col p-6 hidden md:flex z-50 
-                ${isExpanded ? 'w-72 shadow-[20px_0_50px_rgba(0,0,0,0.5)]' : 'w-24'}`}
+                className={`transition-all duration-500 ease-in-out bg-[#080C14] border-r border-white/5 flex flex-col p-6 hidden lg:flex z-50 
+                ${isExpanded ? 'w-72 shadow-[10px_0_40px_rgba(0,0,0,0.7)]' : 'w-24'}`}
             >
-                <div className="mb-12 text-center relative flex flex-col items-center">
-                    <div className="absolute -inset-2 rounded-full blur-xl opacity-20 bg-shinobi-gold"></div>
-                    <div className={`transition-all duration-500 rounded-2xl mb-4 border-2 flex items-center justify-center relative bg-slate-900 overflow-hidden border-shinobi-gold/30 ${isExpanded ? 'w-16 h-16 rotate-[360deg]' : 'w-12 h-12'}`}>
-                        <span className="font-scholar text-shinobi-gold font-bold text-xl uppercase">{nombreUsuario.charAt(0)}</span>
+                <div className="mb-12 flex flex-col items-center">
+                    <div className={`transition-all duration-500 rounded-lg mb-4 border flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 border-shinobi-gold/20 ${isExpanded ? 'w-16 h-16' : 'w-12 h-12'}`}>
+                        <span className="font-scholar text-shinobi-gold font-bold text-2xl">{nombreUsuario.charAt(0)}</span>
                     </div>
-                    <div className={`transition-all duration-500 flex flex-col items-center w-full overflow-hidden ${isExpanded ? 'opacity-100 max-h-20' : 'opacity-0 max-h-0'}`}>
-                        <h3 className="text-white font-bold text-sm uppercase tracking-widest truncate w-full px-2">{nombreUsuario}</h3>
-                        <p className="text-[10px] uppercase tracking-[0.4em] font-black text-shinobi-gold mt-1">SENSEI</p>
-                    </div>
+                    {isExpanded && (
+                        <div className="text-center animate-in fade-in duration-500">
+                            <h3 className="text-white font-bold text-xs uppercase tracking-widest">{nombreUsuario}</h3>
+                            <p className="text-[9px] font-black text-shinobi-gold mt-1 tracking-[0.3em]">ADMINISTRADOR ESTRATÉGICO</p>
+                        </div>
+                    )}
                 </div>
 
-                <nav className="flex-1 space-y-4 mt-4">
-                    {navItems.map((item) => (
-                        <button key={item.label} onClick={() => navigate(item.path)} className="group w-full flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-all duration-300">
-                            <span className="text-xl group-hover:scale-125 transition-transform">{item.icon}</span>
-                            <span className={`font-scholar text-[10px] tracking-widest transition-all duration-500 whitespace-nowrap ${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`}>
-                                {item.label}
-                            </span>
-                        </button>
-                    ))}
+                <nav className="flex-1 space-y-6">
+                    <button onClick={() => navigate('/docente/dashboard')} className="flex items-center gap-4 w-full p-3 rounded-lg bg-white/5 text-shinobi-gold border border-white/5">
+                        <Activity size={20} />
+                        {isExpanded && <span className="text-[10px] font-scholar tracking-widest">MONITOREO GLOBAL</span>}
+                    </button>
                 </nav>
 
-                <button onClick={() => {localStorage.clear(); navigate('/')}} className="mt-auto flex items-center gap-4 p-3 text-rose-500/50 hover:text-rose-500 transition-all uppercase font-scholar text-[10px] tracking-widest">
-                    <span className="text-lg">🚪</span>
-                    <span className={`${isExpanded ? 'opacity-100' : 'opacity-0'} transition-opacity`}>ABANDONAR</span>
+                <button onClick={() => {localStorage.clear(); navigate('/')}} className="mt-auto flex items-center gap-4 p-3 text-rose-500/70 hover:text-rose-400 transition-colors uppercase font-scholar text-[10px] tracking-widest">
+                    <span>🚪</span>
+                    {isExpanded && <span>DESCONECTAR</span>}
                 </button>
             </aside>
 
-            <main className="flex-1 p-5 md:p-10 lg:px-16 lg:py-10 overflow-y-auto relative pb-28 md:pb-16">
-                <div className="absolute top-0 right-0 w-full md:w-1/2 h-1/2 bg-shinobi-gold/5 blur-[120px] rounded-full -z-10"></div>
+            <main className="flex-1 p-4 md:p-8 lg:p-12 overflow-y-auto relative">
+                {/* Fondo de alta gama */}
+                <div className="absolute top-0 right-0 w-full md:w-2/3 h-full bg-[radial-gradient(circle_at_top_right,rgba(197,160,89,0.03),transparent)] -z-10"></div>
                 
-                <header className="mb-10 animate-in fade-in slide-in-from-top-4 duration-1000">
-                    <div className="flex items-center gap-4 mb-2">
-                        <div className="h-[2px] w-12 bg-shinobi-gold"></div>
-                        <span className="text-shinobi-gold font-scholar text-xs tracking-[0.4em] uppercase opacity-50">Monitoreo Académico Avanzado</span>
+                <header className="mb-12">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="h-[1px] w-8 bg-shinobi-gold/40"></div>
+                        <span className="text-shinobi-gold/60 font-scholar text-[10px] tracking-[0.5em] uppercase">Intelligence Division</span>
                     </div>
-                    <h1 className="text-4xl md:text-6xl font-scholar text-white tracking-tighter uppercase leading-tight">
-                        OJO DEL <span className="text-shinobi-gold">MAESTRO</span>
-                    </h1>
-                    <p className="mt-3 text-slate-400 font-mono text-sm tracking-wide uppercase">
-                        Bienvenido a la academia, Sensei <span className="text-white font-bold">{nombreUsuario}</span>
-                    </p>
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                        <div>
+                            <h1 className="text-3xl md:text-5xl font-scholar text-white tracking-tight uppercase">
+                                CONTROL DE <span className="text-shinobi-gold">ACTIVOS</span>
+                            </h1>
+                            <p className="mt-2 text-slate-500 text-xs uppercase tracking-widest font-mono">
+                                Terminal de supervisión: <span className="text-slate-300">Sensei {nombreUsuario}</span>
+                            </p>
+                        </div>
+                        
+                        <div className="flex gap-3">
+                            <button onClick={traerDatos} className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all group">
+                                <RefreshCw size={18} className={`${loading ? 'animate-spin' : ''} text-shinobi-gold`} />
+                            </button>
+                            <button 
+                                onClick={descargarExcel} 
+                                disabled={descargando} 
+                                className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 px-6 py-3 rounded-xl hover:bg-emerald-500/20 transition-all text-emerald-500 text-[10px] font-black tracking-widest uppercase disabled:opacity-50"
+                            >
+                                {descargando ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
+                                <span>Exportar Data</span>
+                            </button>
+                        </div>
+                    </div>
                 </header>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                    <div className="bg-[#0E121C]/80 border border-white/5 p-8 rounded-[2rem] relative overflow-hidden group">
-                        <Users className="absolute -right-2 -top-2 text-shinobi-gold/10 group-hover:scale-110 transition-transform" size={80} />
-                        <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1 font-bold">Total Estudiantes</p>
-                        <p className="text-4xl font-scholar text-white">{estudiantes.length}</p>
+                {/* Estadísticas Compactas */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+                    <div className="bg-[#0E121C] border border-white/5 p-6 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Censo Total</p>
+                            <p className="text-3xl font-scholar text-white">{estudiantes.length}</p>
+                        </div>
+                        <Users className="text-shinobi-gold/20" size={40} />
                     </div>
-
-                    <div className="bg-[#0E121C]/80 border border-white/5 p-8 rounded-[2rem] relative overflow-hidden group">
-                        <Activity className="absolute -right-2 -top-2 text-emerald-500/10 group-hover:scale-110 transition-transform" size={80} />
-                        <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1 font-bold">Rendimiento Aldea</p>
-                        <p className="text-4xl font-scholar text-emerald-500">82%</p>
+                    <div className="bg-[#0E121C] border border-white/5 p-6 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Efectividad Promedio</p>
+                            <p className="text-3xl font-scholar text-emerald-500">82.4%</p>
+                        </div>
+                        <Activity className="text-emerald-500/20" size={40} />
                     </div>
-
-                    <button onClick={traerDatos} className="bg-white/5 border border-white/10 rounded-[2rem] flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-all group">
-                        <RefreshCw className={`text-shinobi-gold ${loading ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-700`} size={30} />
-                        <span className="text-[9px] font-scholar tracking-[0.2em] uppercase">Sincronizar</span>
-                    </button>
-
-                    <button onClick={descargarExcel} disabled={descargando} className="bg-emerald-600/10 border border-emerald-500/20 rounded-[2rem] flex flex-col items-center justify-center gap-2 hover:bg-emerald-600/20 transition-all group disabled:opacity-50">
-                        {descargando ? <Loader2 className="animate-spin text-emerald-500" size={30} /> : <FileDown className="text-emerald-400 group-hover:-translate-y-1 transition-transform" size={30} />}
-                        <span className="text-[9px] font-scholar tracking-[0.2em] uppercase text-emerald-500">Bajar Reporte</span>
-                    </button>
+                    <div className="bg-[#0E121C] border border-white/5 p-6 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Alerta de Deserción</p>
+                            <p className="text-3xl font-scholar text-rose-500">2</p>
+                        </div>
+                        <Zap className="text-rose-500/20" size={40} />
+                    </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-4 mb-8 bg-[#0E121C]/40 p-2 rounded-[2rem] border border-white/5 backdrop-blur-sm shadow-xl">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+                {/* Filtros de Precisión */}
+                <div className="flex flex-col md:flex-row gap-4 mb-6">
+                    <div className="relative flex-1 group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-shinobi-gold transition-colors" size={16} />
                         <input 
                             type="text" 
-                            placeholder="FILTRAR NINJA POR NOMBRE..."
-                            className="w-full bg-transparent border-none rounded-full py-4 pl-14 pr-6 text-xs uppercase tracking-widest text-white placeholder:text-slate-700 focus:ring-0 outline-none"
+                            placeholder="BUSCAR EXPEDIENTE POR NOMBRE..."
+                            className="w-full bg-[#0E121C] border border-white/5 rounded-xl py-3 pl-12 pr-6 text-[11px] uppercase tracking-widest text-white outline-none focus:border-shinobi-gold/50 transition-all"
                             value={busqueda}
                             onChange={(e) => setBusqueda(e.target.value)}
                         />
                     </div>
                     <select 
-                        className="bg-[#05070A] border border-white/10 rounded-full px-8 py-2 text-[10px] font-black uppercase tracking-widest text-shinobi-gold focus:border-shinobi-gold transition-all mr-2 outline-none cursor-pointer"
+                        className="bg-[#0E121C] border border-white/5 rounded-xl px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-shinobi-gold outline-none focus:border-shinobi-gold/50 cursor-pointer"
                         value={filtroNivel}
                         onChange={(e) => setFiltroNivel(e.target.value)}
                     >
-                        <option value="">TODOS LOS RANGOS</option>
+                        <option value="">FILTRAR POR RANGO</option>
                         <option value="GENIN">GENIN</option>
                         <option value="CHUNIN">CHUNIN</option>
                         <option value="JONIN">JONIN</option>
+                        <option value="KAGE">KAGE (LEYENDA)</option>
                     </select>
                 </div>
 
-                <div className="bg-[#0E121C]/60 border border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-md shadow-2xl">
+                {/* Tabla de Alto Impacto */}
+                <div className="bg-[#0E121C]/80 border border-white/5 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-sm">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead className="bg-white/5 text-[11px] uppercase tracking-[0.3em] text-shinobi-gold font-bold">
+                        <table className="w-full text-left">
+                            <thead className="bg-white/5 text-[10px] uppercase tracking-[0.2em] text-slate-500 font-bold border-b border-white/5">
                                 <tr>
-                                    <th className="p-8">Identidad del Ninja</th>
-                                    <th className="p-8">Jerarquía (IA)</th>
-                                    <th className="p-8 text-center">Avance Maestro</th>
-                                    <th className="p-8 text-center">Rastro Ninja</th>
-                                    <th className="p-8 text-right">Acción</th>
+                                    <th className="p-6">Estudiante</th>
+                                    <th className="p-6">Rango Jerárquico</th>
+                                    <th className="p-6 text-center">Progreso Académico</th>
+                                    <th className="p-6 text-center">Estado Actividad</th>
+                                    <th className="p-6 text-right">Gestión</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
                                 {estudiantesFiltrados.map((est) => {
-                                    // 🚩 Calculamos el estado de conexión para cada estudiante
-                                    const conexion = evaluarConexion(est.ultima_conexion);
+                                    const conexion = evaluarConexion(est.ultima_conexion, est.estado);
                                     
                                     return (
-                                        <tr key={est.id_estudiante} className="hover:bg-white/[0.04] transition-all group">
-                                            <td className="p-8">
+                                        <tr key={est.id_estudiante} className="hover:bg-white/[0.02] transition-colors group">
+                                            <td className="p-6">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-xl bg-shinobi-dark border border-white/10 flex items-center justify-center font-scholar text-shinobi-gold text-lg shadow-inner group-hover:border-shinobi-gold/50 transition-all">
-                                                        {est.nombre?.charAt(0).toUpperCase() || 'N'}
+                                                    <div className="w-10 h-10 rounded-lg bg-slate-800 border border-white/5 flex items-center justify-center font-scholar text-shinobi-gold text-sm">
+                                                        {est.nombre?.charAt(0)}
                                                     </div>
                                                     <div>
-                                                        <p className="text-base font-bold text-white group-hover:text-shinobi-gold transition-colors">{est.nombre}</p>
-                                                        <p className="text-[10px] text-slate-500 font-mono tracking-tighter uppercase">{est.correo}</p>
+                                                        <p className="text-sm font-bold text-slate-200 group-hover:text-white transition-colors">{est.nombre}</p>
+                                                        <p className="text-[10px] text-slate-500 font-mono lowercase">{est.correo}</p>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="p-8">
-                                                <span className={`text-[10px] font-black px-4 py-1.5 rounded-lg border tracking-widest uppercase ${
+                                            <td className="p-6">
+                                                <span className={`text-[9px] font-black px-3 py-1 rounded-md border tracking-widest uppercase ${
+                                                    est.rango_ia_asignado?.includes('Kage') ? 'border-orange-500/40 text-orange-400 bg-orange-500/10 shadow-[0_0_10px_rgba(249,115,22,0.1)]' :
                                                     est.rango_ia_asignado?.includes('Jonin') ? 'border-purple-500/30 text-purple-400 bg-purple-500/5' :
                                                     est.rango_ia_asignado?.includes('Chunin') ? 'border-blue-500/30 text-blue-400 bg-blue-500/5' :
                                                     'border-emerald-500/30 text-emerald-400 bg-emerald-500/5'
                                                 }`}>
-                                                    {est.rango_ia_asignado || 'Genin (Iniciado)'}
+                                                    {est.rango_ia_asignado || 'Pendiente'}
                                                 </span>
                                             </td>
-                                            <td className="p-8">
-                                                <div className="flex flex-col items-center gap-2">
-                                                    <span className="text-[11px] font-black text-white">{est.avance_promedio || '0%'}</span>
-                                                    <div className="w-32 h-1.5 bg-black/40 rounded-full overflow-hidden p-[1px] border border-white/5 shadow-inner">
+                                            <td className="p-6">
+                                                <div className="flex flex-col items-center gap-1.5">
+                                                    <span className="text-[10px] font-bold text-slate-300">{est.avance_promedio || '0%'}</span>
+                                                    <div className="w-24 h-1 bg-slate-800 rounded-full overflow-hidden">
                                                         <div 
-                                                            className="h-full bg-shinobi-gold shadow-[0_0_10px_rgba(212,175,55,0.4)] transition-all duration-1000 ease-out" 
+                                                            className="h-full bg-shinobi-gold transition-all duration-1000" 
                                                             style={{ width: est.avance_promedio || '0%' }}
                                                         ></div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="p-8 text-center">
-                                                <div className="flex justify-center items-center">
-                                                    {/* 🚩 Aplicamos el color y texto basado en el tiempo real */}
-                                                    <span className={`flex items-center gap-2 text-[9px] font-black px-3 py-1.5 rounded-full border tracking-[0.2em] uppercase whitespace-nowrap ${conexion.estilo}`}>
-                                                        <span className={`w-1.5 h-1.5 rounded-full ${conexion.dot}`}></span>
+                                            <td className="p-6">
+                                                <div className="flex justify-center">
+                                                    <span className={`flex items-center gap-2 text-[9px] font-bold px-3 py-1 rounded-full border tracking-widest uppercase ${conexion.estilo}`}>
+                                                        <span className={`w-1 h-1 rounded-full ${conexion.dot}`}></span>
                                                         {conexion.texto}
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="p-8 text-right">
+                                            <td className="p-6 text-right">
                                                 <button 
                                                     onClick={() => navigate(`/docente/reporte-estudiante/${est.id_estudiante}`)}
-                                                    className="inline-flex items-center gap-2 bg-white/5 hover:bg-shinobi-gold hover:text-black transition-all text-[10px] font-black uppercase tracking-widest py-3 px-8 rounded-full border border-white/10 shadow-lg active:scale-95 cursor-pointer"
+                                                    className="bg-white/5 hover:bg-shinobi-gold hover:text-black transition-all text-[9px] font-black uppercase tracking-widest py-2 px-5 rounded-lg border border-white/5 active:scale-95"
                                                 >
-                                                    Expediente <ChevronRight size={16} />
+                                                    Expediente
                                                 </button>
                                             </td>
                                         </tr>
                                     );
                                 })}
-                                {estudiantesFiltrados.length === 0 && (
-                                    <tr>
-                                        <td colSpan="5" className="p-20 text-center text-slate-600 font-scholar uppercase tracking-[0.5em] text-xs">
-                                            Ningún ninja coincide con el registro
-                                        </td>
-                                    </tr>
-                                )}
                             </tbody>
                         </table>
                     </div>
+                    {estudiantesFiltrados.length === 0 && (
+                        <div className="p-16 text-center">
+                            <p className="text-slate-600 font-scholar uppercase tracking-[0.4em] text-[10px]">Sin registros en la base de datos central</p>
+                        </div>
+                    )}
                 </div>
             </main>
         </div>
