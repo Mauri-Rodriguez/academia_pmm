@@ -19,6 +19,7 @@ import ReporteDetalladoEstudiante from './pages/ReporteDetalladoEstudiante';
 import VerificarCorreo from './pages/VerificarCorreo';
 import ProtectedRoute from './components/ProtectedRoute';
 
+
 function App() {
   return (
     <BrowserRouter>
