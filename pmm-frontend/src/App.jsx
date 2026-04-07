@@ -25,6 +25,7 @@ function App() {
       <Routes>
         {/* 🔓 RUTAS PÚBLICAS (Cualquiera entra) */}
         <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/registro" element={<Registro />} />
         <Route path="/verificar-correo/:token" element={<VerificarCorreo />} />
         <Route path="/recuperar-password" element={<SolicitarRecuperacion />} />
