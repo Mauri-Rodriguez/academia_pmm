@@ -13,8 +13,10 @@ const Diagnostico = () => {
     useEffect(() => {
         const obtenerPreguntas = async () => {
             try {
-                const res = await api.get('/api/estudiante/preguntas-diagnostico');
-                setPreguntas(res.data);
+                // Si la ruta en tu backend cambió, asegúrate de que esta coincida con tus routes
+                const res = await api.get('/api/diagnostico/preguntas'); 
+                // Asumiendo que el backend devuelve { data: [...] } según el controlador anterior
+                setPreguntas(res.data.data || res.data); 
             } catch (err) {
                 console.error("Error al invocar el banco de preguntas:", err);
                 alert("No se pudieron cargar las preguntas.");
@@ -32,37 +34,36 @@ const Diagnostico = () => {
         }
     };
 
-const finalizarPrueba = async () => {
-    setEnviando(true);
-    try {
-        // Cálculo de aciertos locales
-        let aciertosContados = 0;
-        preguntas.forEach(p => {
-            if (respuestas[p.id_pregunta] === p.respuesta_correcta) {
-                aciertosContados++;
-            }
-        });
+    const finalizarPrueba = async () => {
+        setEnviando(true);
+        try {
+            // 1. Transformamos el estado 'respuestas' (objeto) al formato array que espera el backend
+            const formatoRespuestas = Object.keys(respuestas).map(id_pregunta => ({
+                id_pregunta: parseInt(id_pregunta),
+                respuesta: respuestas[id_pregunta]
+            }));
 
-        // 🚩 CORRECCIÓN DE URL: Cambiado a '/api/estudiante/diagnostico'
-        const res = await api.post('/api/estudiante/diagnostico', {
-            puntaje: aciertosContados 
-        });
+            // 2. Enviamos el array al nuevo endpoint de evaluación
+            const res = await api.post('/api/diagnostico/evaluar', {
+                respuestas: formatoRespuestas 
+            });
 
-        // Navegación a resultados
-        navigate('/estudiante/resultado', { 
-            state: { 
-                rango: res.data.nivel_asignado, 
-                aciertos: res.data.puntaje_obtenido 
-            } 
-        });
+            // 3. Navegamos a la vista de resultados pasando TODA la información nueva
+            navigate('/estudiante/resultado', { 
+                state: { 
+                    rango: res.data.resultados.rango_asignado, 
+                    aciertos: res.data.resultados.correctas,
+                    detalle: res.data.detalle // ¡Aquí pasamos el pergamino de errores!
+                } 
+            });
 
-    } catch (err) {
-        console.error("❌ Error al guardar:", err);
-        alert("Error al sellar tus resultados. Revisa la conexión con la Aldea.");
-    } finally {
-        setEnviando(false);
-    }
-};
+        } catch (err) {
+            console.error("❌ Error al guardar:", err);
+            alert("Error al sellar tus resultados. Revisa la conexión con la Aldea.");
+        } finally {
+            setEnviando(false);
+        }
+    };
 
     if (loading) return (
         <div className="min-h-screen bg-shinobi-dark flex items-center justify-center">
@@ -75,7 +76,7 @@ const finalizarPrueba = async () => {
     const pActual = preguntas[paso];
     const opcionesKeys = ['opcion_a', 'opcion_b', 'opcion_c', 'opcion_d'];
 
-return (
+    return (
         <div className="min-h-screen bg-shinobi-dark flex flex-col items-center justify-center p-4">
 
             <div className="max-w-2xl w-full bg-[#f4f1e1] p-10 rounded-sm border-t-8 border-shinobi-orange shadow-2xl relative overflow-hidden">

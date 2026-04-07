@@ -43,19 +43,40 @@ exports.evaluarDiagnostico = async (req, res) => {
             return res.status(400).json({ mensaje: 'Formato de respuestas inválido.' });
         }
 
-        // 1. Calificación de Respuestas
+        // 1. Calificación de Respuestas y Generación de Detalles
         const preguntasDB = await PreguntaDiagnostico.findAll({ raw: true });
         let respuestasCorrectas = 0;
         const totalPreguntas = preguntasDB.length;
+        const detalleRespuestas = []; // Arreglo para la revisión en el frontend
 
         respuestas.forEach(resEstudiante => {
             const preguntaReal = preguntasDB.find(p => p.id_pregunta === resEstudiante.id_pregunta);
-            if (preguntaReal && preguntaReal.respuesta_correcta.trim().toLowerCase() === resEstudiante.respuesta.trim().toLowerCase()) {
-                respuestasCorrectas++;
+            
+            if (preguntaReal) {
+                const esCorrecta = preguntaReal.respuesta_correcta.trim().toLowerCase() === resEstudiante.respuesta.trim().toLowerCase();
+                
+                if (esCorrecta) {
+                    respuestasCorrectas++;
+                }
+
+                // Estructuramos los datos para el pergamino de errores
+                detalleRespuestas.push({
+                    id_pregunta: preguntaReal.id_pregunta,
+                    pregunta: preguntaReal.pregunta,
+                    opciones: [
+                        { clave: 'opcion_a', texto: preguntaReal.opcion_a },
+                        { clave: 'opcion_b', texto: preguntaReal.opcion_b },
+                        { clave: 'opcion_c', texto: preguntaReal.opcion_c },
+                        { clave: 'opcion_d', texto: preguntaReal.opcion_d }
+                    ],
+                    respuesta_correcta: preguntaReal.respuesta_correcta, 
+                    respuesta_usuario: resEstudiante.respuesta,
+                    es_correcta: esCorrecta
+                });
             }
         });
 
-        // 2. ORQUESTACIÓN DE MICROSERVICIOS: Llamada a la IA en Flask [cite: 464, 466]
+        // 2. ORQUESTACIÓN DE MICROSERVICIOS: Llamada a la IA en Flask
         let nivelAsignado = '';
         const mapaNiveles = {
             0: 'Genin (Iniciado)',
@@ -90,7 +111,7 @@ exports.evaluarDiagnostico = async (req, res) => {
             fecha_realizacion: new Date() 
         }, { transaction: t });
 
-        // 🚩 4. LÓGICA DE HERENCIA: Insignias y Progreso Dinámico (RF-07) [cite: 438, 527]
+        // 🚩 4. LÓGICA DE HERENCIA: Insignias y Progreso Dinámico (RF-07)
         let idsModulosLegacy = [];
 
         // Definición de jerarquía según los IDs de tu base de datos
@@ -128,7 +149,8 @@ exports.evaluarDiagnostico = async (req, res) => {
                 total: totalPreguntas,
                 rango_asignado: nivelAsignado,
                 insignias_heredadas: idsModulosLegacy.length
-            }
+            },
+            detalle: detalleRespuestas // <-- Enviamos el detalle al frontend aquí
         });
 
     } catch (error) {
