@@ -59,7 +59,7 @@ const Registro = () => {
 
         try {
             // Enviamos la petición al backend. 
-            // 🚩 RECUERDA: El backend ignorará el "rol" que envíes y lo asignará según el dominio.
+            //  El backend ignorará el "rol" que se envía y lo asignará según el dominio.
             const res = await api.post('/api/auth/register', {
                 nombre_completo: formData.nombre_completo,
                 correo: formData.correo,
@@ -67,7 +67,7 @@ const Registro = () => {
             });
 
             setMensaje({ 
-                texto: '¡Registro exitoso! Revisa tu correo para activar tu cuenta.', 
+                texto: '¡Registro exitoso! Revisa tu correo para activar tu cuenta (Ten en cuenta Spam o no deseados ).', 
                 tipo: 'success' 
             });
             
