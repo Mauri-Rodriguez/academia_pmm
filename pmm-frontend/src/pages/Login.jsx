@@ -1,57 +1,59 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { GoogleLogin } from '@react-oauth/google'; 
-import api from '../api/api'; 
+import { GoogleLogin } from '@react-oauth/google';
+import api from '../api/api';
 
 const Login = () => {
     const [correo, setCorreo] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    
+
     const navigate = useNavigate();
 
     // 🛡️ DOMINIOS PERMITIDOS (Con el acceso para estudiantes desbloqueado)
     const DOMINIOS_PERMITIDOS = [
-        'uniajc.edu.co', 
-        'estudiante.uniajc.edu.co', 
-        'profesores.uniajc.edu.co', 
+        'uniajc.edu.co',
+        'estudiante.uniajc.edu.co',
+        'profesores.uniajc.edu.co',
         'admon.uniajc.edu.co',
-        'gmail.com', 
-        'outlook.com', 
+        'gmail.com',
+        'outlook.com',
         'hotmail.com'
     ];
 
     // FUNCIÓN MAESTRA: Sincroniza la identidad en toda la aldea
-const guardarSesion = (token, usuario, requiereDiagnostico) => {
-    localStorage.clear(); 
-    localStorage.setItem('token', token); 
-    localStorage.setItem('rol', usuario.rol);
-    localStorage.setItem('user_name', usuario.nombre_completo);
+    const guardarSesion = (token, usuario, requiereDiagnostico) => {
+        // 🧹 Limpieza de chakra para evitar sesiones residuales
+        localStorage.clear();
 
-    if (usuario.rol === 'docente') {
-        navigate('/docente/dashboard');
-        return;
-    } 
+        // 🔑 Guardamos el token para las cabeceras de Axios
+        localStorage.setItem('token', token);
 
-    // 🛡️ EL CANDADO DEFINITIVO
-    // Si el backend nos dice explícitamente que NO requiere diagnóstico,
-    // ignoramos cualquier otra validación y vamos al Dashboard.
-    if (requiereDiagnostico === false) {
-        console.log("🔥 Rango detectado en DB. Saltando diagnóstico...");
-        navigate('/estudiante/dashboard');
-    } else {
-        console.log("🥷 Sin registros previos. Iniciando diagnóstico...");
-        navigate('/estudiante/diagnostico');
-    }
-};
+        // 👤 El objeto usuario completo para el ProtectedRoute
+        localStorage.setItem('usuario', JSON.stringify(usuario));
 
-const handleGoogleSuccess = async (credentialResponse) => {
+        // 🚩 Redirección inteligente por Rol y Estado
+        if (usuario.rol === 'docente') {
+            navigate('/docente/dashboard');
+            return;
+        }
+
+        if (requiereDiagnostico === false) {
+            console.log("🔥 Usuario veterano detectado. Dashboard directo.");
+            navigate('/estudiante/dashboard');
+        } else {
+            console.log("🥷 Nuevo recluta. Iniciando examen de diagnóstico...");
+            navigate('/estudiante/diagnostico');
+        }
+    };
+
+    const handleGoogleSuccess = async (credentialResponse) => {
         setLoading(true);
         try {
             // Le agregamos el /api al inicio de la ruta
-            const res = await api.post('/api/auth/google-login', { 
-                token: credentialResponse.credential 
+            const res = await api.post('/api/auth/google-login', {
+                token: credentialResponse.credential
             });
             // 🚩 Sincronizamos la sesión con el diagnóstico
             guardarSesion(res.data.token, res.data.usuario, res.data.requiereDiagnostico);
@@ -62,7 +64,7 @@ const handleGoogleSuccess = async (credentialResponse) => {
         }
     };
 
-const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError(''); // Limpiamos errores previos
 
@@ -81,7 +83,7 @@ const handleSubmit = async (e) => {
         try {
             // ✅ EL CAMBIO MÁGICO: Le agregamos el /api al inicio de la ruta
             const res = await api.post('/api/auth/login', { correo, password });
-            
+
             // 🚩 Sincronizamos la identidad
             guardarSesion(res.data.token, res.data.usuario, res.data.requiereDiagnostico);
         } catch (err) {
@@ -97,7 +99,7 @@ const handleSubmit = async (e) => {
             <svg className="w-full h-full text-shinobi-gold fill-current z-10" viewBox="0 0 100 100">
                 <path d="M 50 15 C 30 15, 15 30, 15 50 C 15 70, 30 85, 50 85 L 50 80 C 35 80, 20 65, 20 50 C 20 35, 35 20, 50 20 Z" />
                 <text x="50" y="65" fontFamily="serif" fontSize="30" textAnchor="middle" fill="#C5A059" fontWeight="bold">Σ</text>
-                <path d="M 55 25 L 75 15 L 65 25 M 70 20 L 80 25" stroke="currentColor" strokeWidth="2"/>
+                <path d="M 55 25 L 75 15 L 65 25 M 70 20 L 80 25" stroke="currentColor" strokeWidth="2" />
             </svg>
         </div>
     );
@@ -109,7 +111,7 @@ const handleSubmit = async (e) => {
                     <CodeMascotEmblem />
                     <p className="mt-6 font-scholar text-[10px] text-shinobi-gold uppercase tracking-[0.3em] opacity-60">Sello del Saber Matemático</p>
                 </div>
-                
+
                 <div className="md:w-1/2 w-full flex items-center justify-center">
                     <div className="relative bg-[#f4f1e1]/95 backdrop-blur-md p-8 rounded-sm shadow-2xl w-full max-w-md border-y-4 border-shinobi-gold">
                         <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-[#8B0000] rounded-full flex items-center justify-center shadow-lg border-2 border-shinobi-gold z-10">
@@ -124,10 +126,10 @@ const handleSubmit = async (e) => {
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <input required type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} className="w-full bg-transparent border-b-2 border-slate-300 p-2 focus:border-orange-500 outline-none text-slate-900" placeholder="ninja@academia.edu" />
-                            
+
                             <div>
                                 <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-transparent border-b-2 border-slate-300 p-2 focus:border-orange-500 outline-none text-slate-900" placeholder="••••••••" />
-                                
+
                                 {/* 🛡️ NUEVO ENLACE DE RECUPERACIÓN */}
                                 <div className="flex justify-end mt-2">
                                     <Link to="/recuperar-password" className="text-[10px] text-slate-500 hover:text-orange-600 font-modern uppercase tracking-widest transition-colors">
@@ -135,7 +137,7 @@ const handleSubmit = async (e) => {
                                     </Link>
                                 </div>
                             </div>
-                            
+
                             <button type="submit" disabled={loading} className="w-full mt-4 bg-slate-900 text-shinobi-gold font-scholar py-3 tracking-widest hover:bg-orange-600 transition-all uppercase text-sm">
                                 {loading ? 'Validando Pergamino...' : 'Iniciar Sesión'}
                             </button>
@@ -147,8 +149,8 @@ const handleSubmit = async (e) => {
                             </div>
 
                             <div className="flex justify-center">
-                                <GoogleLogin 
-                                    onSuccess={handleGoogleSuccess} 
+                                <GoogleLogin
+                                    onSuccess={handleGoogleSuccess}
                                     onError={() => setError('Fallo en la conexión')}
                                     use_fedcm_for_prompt={false}
                                     theme="filled_black"

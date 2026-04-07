@@ -16,40 +16,42 @@ import SolicitarRecuperacion from './pages/SolicitarRecuperacion';
 import ResetPassword from './pages/ResetPassword';
 import DashboardDocente from './pages/DashboardDocente';
 import ReporteDetalladoEstudiante from './pages/ReporteDetalladoEstudiante';
-// 🚩 IMPORTACIÓN FALTANTE: El nuevo componente de verificación
 import VerificarCorreo from './pages/VerificarCorreo';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* RUTAS PÚBLICAS */}
+        {/* 🔓 RUTAS PÚBLICAS (Cualquiera entra) */}
         <Route path="/" element={<Login />} />
         <Route path="/registro" element={<Registro />} />
-        <Route path="/recuperar-password" element={<SolicitarRecuperacion />} />
-        {/* 🚩 RUTA DE ACTIVACIÓN (Debe ser pública para que entren desde el correo) */}
         <Route path="/verificar-correo/:token" element={<VerificarCorreo />} />
+        <Route path="/recuperar-password" element={<SolicitarRecuperacion />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-        {/* RUTAS PRIVADAS DEL ESTUDIANTE */}
-        <Route path="/estudiante/diagnostico" element={<Diagnostico />} />
-        <Route path="/estudiante/resultado" element={<ResultadoDiagnostico />} />
-        <Route path="/estudiante/historial-errores" element={<HistorialErrores />} />
-        <Route path="/estudiante/dashboard" element={<DashboardEstudiante />} />
-        <Route path="/estudiante/modulo/:id_modulo" element={<ModuloEstudio />} />
-        <Route path="/estudiante/perfil" element={<PerfilEstudiante />} />
-        <Route path="/estudiante/ranking" element={<LibroDeBingo />} />
-        <Route path="/estudiante/biblioteca" element={<Biblioteca />} />
-        <Route path="/estudiante/foro" element={<ForoComunidad />} />
-        <Route path="/docente/dashboard" element={<DashboardDocente />} />
-        <Route path="/docente/reporte-estudiante/:id" element={<ReporteDetalladoEstudiante />} />
-        
-        
-        
-        {/* REDIRECCIÓN DE SEGURIDAD: SIEMPRE AL FINAL */}
+
+        {/* 🛡️ RUTAS PROTEGIDAS: SOLO ESTUDIANTES */}
+        <Route element={<ProtectedRoute allowedRoles={['estudiante']} />}>
+            <Route path="/estudiante/diagnostico" element={<Diagnostico />} />
+            <Route path="/estudiante/resultado" element={<ResultadoDiagnostico />} />
+            <Route path="/estudiante/dashboard" element={<DashboardEstudiante />} />
+            <Route path="/estudiante/modulo/:id_modulo" element={<ModuloEstudio />} />
+            <Route path="/estudiante/perfil" element={<PerfilEstudiante />} />
+            <Route path="/estudiante/ranking" element={<LibroDeBingo />} />
+            <Route path="/estudiante/biblioteca" element={<Biblioteca />} />
+            <Route path="/estudiante/foro" element={<ForoComunidad />} />
+            <Route path="/estudiante/historial-errores" element={<HistorialErrores />} />
+        </Route>
+
+        {/* 🛡️ RUTAS PROTEGIDAS: SOLO DOCENTES */}
+        <Route element={<ProtectedRoute allowedRoles={['docente']} />}>
+            <Route path="/docente/dashboard" element={<DashboardDocente />} />
+            <Route path="/docente/reporte-estudiante/:id" element={<ReporteDetalladoEstudiante />} />
+        </Route>
+
+        {/* 🚫 RUTA NOT FOUND */}
         <Route path="*" element={<NotFoundNinja />} />
       </Routes>
     </BrowserRouter>
   );
 }
-
-export default App;

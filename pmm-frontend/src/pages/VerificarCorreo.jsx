@@ -21,7 +21,7 @@ const VerificarCorreo = () => {
                 // Llama al endpoint del backend
                 await api.get(`/api/auth/verificar/${token}`);
                 setEstado('exito');
-                setTimeout(() => navigate('/login'), 4000); // Lo manda al login
+                setTimeout(() => navigate('/'), 4000); // Lo manda al login
             } catch (error) {
                 console.error("Error de verificación:", error.response?.data || error);
                 setEstado('error');
