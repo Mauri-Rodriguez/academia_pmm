@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/api';
 
@@ -7,181 +7,145 @@ const Registro = () => {
         nombre_completo: '',
         correo: '',
         password: '',
-        confirmarPassword: '', 
-        rol: 'estudiante'
+        confirmarPassword: '',
     });
     
     const [mensaje, setMensaje] = useState({ texto: '', tipo: '' });
     const [loading, setLoading] = useState(false);
+    const [passwordMatch, setPasswordMatch] = useState(true);
+    const [detectedRole, setDetectedRole] = useState('');
     const navigate = useNavigate();
 
-    // 🛡️ DOMINIOS PERMITIDOS ACTUALIZADOS (Incluye Profesores y Administrativos UNIAJC)
+    const DOMINIOS_DOCENTES = ['profesores.uniajc.edu.co', 'admon.uniajc.edu.co'];
     const DOMINIOS_PERMITIDOS = [
+        ...DOMINIOS_DOCENTES,
         'estudiante.uniajc.edu.co', 
-        'profesores.uniajc.edu.co', 
-        'admon.uniajc.edu.co',      
-        'gmail.com', 
-        'outlook.com', 
-        'hotmail.com'
+        'gmail.com', 'outlook.com', 'hotmail.com'
     ];
+
+    // 🛡️ EFECTO: Validación en tiempo real
+    useEffect(() => {
+        // Validar coincidencia de passwords
+        if (formData.confirmarPassword !== '') {
+            setPasswordMatch(formData.password === formData.confirmarPassword);
+        }
+
+        // Detectar rol por dominio
+        const dominio = formData.correo.split('@')[1]?.toLowerCase();
+        if (DOMINIOS_DOCENTES.includes(dominio)) {
+            setDetectedRole('Docente/Administrativo');
+        } else if (dominio) {
+            setDetectedRole('Estudiante');
+        } else {
+            setDetectedRole('');
+        }
+    }, [formData, DOMINIOS_DOCENTES]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const getPasswordStrength = () => {
+        if (formData.password.length === 0) return { label: '', color: 'bg-gray-300', width: '0%' };
+        if (formData.password.length < 6) return { label: 'Chakra Débil', color: 'bg-red-500', width: '33%' };
+        if (formData.password.length < 10) return { label: 'Chakra Estable', color: 'bg-yellow-500', width: '66%' };
+        return { label: 'Chakra de Maestro', color: 'bg-green-500', width: '100%' };
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setMensaje({ texto: '', tipo: '' });
-
-        // 🛡️ Filtros de Seguridad Frontend (Formato y Dominio)
-        const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!regexCorreo.test(formData.correo)) {
-            return setMensaje({ texto: 'El formato del correo es inválido.', tipo: 'error' });
-        }
-
-        const dominio = formData.correo.split('@')[1]?.toLowerCase();
-        if (!DOMINIOS_PERMITIDOS.includes(dominio)) {
-            return setMensaje({ 
-                texto: `Dominio no autorizado. Usa tu correo institucional o personal (Gmail/Outlook/Hotmail).`, 
-                tipo: 'error' 
-            });
-        }
-
-        // 🛡️ Filtros de Contraseña
-        if (formData.password.length < 6) {
-            return setMensaje({ texto: 'La contraseña debe tener al menos 6 caracteres.', tipo: 'error' });
-        }
-        if (formData.password !== formData.confirmarPassword) {
-            return setMensaje({ texto: 'Las contraseñas no coinciden. Revisa tu sello.', tipo: 'error' });
-        }
+        if (!passwordMatch) return setMensaje({ texto: 'Las contraseñas no coinciden.', tipo: 'error' });
+        if (formData.password.length < 6) return setMensaje({ texto: 'Contraseña muy corta.', tipo: 'error' });
 
         setLoading(true);
-
         try {
-            // Enviamos la petición al backend. 
-            //  El backend ignorará el "rol" que se envía y lo asignará según el dominio.
-            const res = await api.post('/api/auth/register', {
+            await api.post('/api/auth/register', {
                 nombre_completo: formData.nombre_completo,
                 correo: formData.correo,
                 password: formData.password
             });
 
-            setMensaje({ 
-                texto: '¡Registro exitoso! Revisa tu correo para activar tu cuenta (Ten en cuenta Spam o no deseados ).', 
-                tipo: 'success' 
-            });
-            
-            // Esperamos un poco más para que el usuario lea el mensaje de ir al correo
+            setMensaje({ texto: '¡Sello Forjado! Revisa tu correo de activación.', tipo: 'success' });
             setTimeout(() => navigate('/'), 4000);
         } catch (err) {
-            console.error("Error en registro:", err);
-            setMensaje({ 
-                texto: err.response?.data?.mensaje || 'Error al forjar tu registro en la aldea.', 
-                tipo: 'error' 
-            });
+            setMensaje({ texto: err.response?.data?.mensaje || 'Error en la forja.', tipo: 'error' });
         } finally {
             setLoading(false);
         }
     };
 
-    const CodeMascotEmblem = () => (
-        <div className="relative group w-full max-w-sm aspect-square flex items-center justify-center p-8 bg-white/5 border-shinobi-gold/20 border-2 rounded-full shadow-[0_0_20px_rgba(197,160,89,0.2)]">
-            <div className="absolute inset-0 bg-shinobi-orange opacity-10 blur-3xl rounded-full scale-110"></div>
-            <svg className="w-full h-full text-shinobi-gold fill-current z-10" viewBox="0 0 100 100">
-                <path d="M 50 15 C 30 15, 15 30, 15 50 C 15 70, 30 85, 50 85 L 50 80 C 35 80, 20 65, 20 50 C 20 35, 35 20, 50 20 Z" />
-                <text x="50" y="65" fontFamily="serif" fontSize="30" textAnchor="middle" fill="#C5A059" fontWeight="bold">Σ</text>
-                <path d="M 55 25 L 75 15 L 65 25 M 70 20 L 80 25" stroke="currentColor" strokeWidth="2"/>
-            </svg>
-        </div>
-    );
+    const strength = getPasswordStrength();
 
     return (
-        <div className="min-h-screen bg-shinobi-dark flex items-center justify-center p-6 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
-            <div className="flex flex-col md:flex-row items-center justify-center gap-12 lg:gap-20 w-full max-w-7xl">
+        <div className="min-h-screen bg-[#0A0C10] flex items-center justify-center p-6 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-12 w-full max-w-7xl">
                 
-                <div className="md:w-1/2 hidden md:flex flex-col items-center justify-center p-4 text-center">
-                    <CodeMascotEmblem />
-                    <p className="mt-6 font-scholar text-[10px] text-shinobi-gold uppercase tracking-[0.3em] opacity-60">
-                        Inscripción en la Academia PMM
-                    </p>
+                {/* LADO IZQUIERDO: EMBLEMA */}
+                <div className="hidden md:flex flex-col items-center animate-pulse">
+                    <div className="w-64 h-64 border-4 border-shinobi-gold rounded-full flex items-center justify-center bg-white/5 shadow-[0_0_50px_rgba(197,160,89,0.1)]">
+                        <span className="text-shinobi-gold text-8xl font-bold">Σ</span>
+                    </div>
+                    <p className="mt-8 font-scholar text-shinobi-gold tracking-[0.5em] uppercase text-xs">PMM Interactivo</p>
                 </div>
-                
-                <div className="md:w-1/2 w-full flex items-center justify-center">
-                    <div className="relative bg-[#f4f1e1]/95 backdrop-blur-md p-8 rounded-sm shadow-2xl w-full max-w-md border-y-4 border-shinobi-gold">
-                        
-                        <div className="text-center mt-2 mb-6">
-                            <h2 className="font-scholar text-2xl text-shinobi-dark tracking-widest uppercase">
-                                Forjar Nuevo <span className="text-shinobi-orange">Sello</span>
-                            </h2>
-                            <div className="h-px bg-shinobi-gold/30 w-3/4 mx-auto my-2"></div>
-                            <p className="font-modern text-[10px] text-slate-500 uppercase tracking-widest mt-2">
-                                Identidad Institucional Detectada
-                            </p>
+
+                {/* FORMULARIO */}
+                <div className="relative bg-[#f4f1e1]/95 p-8 rounded-sm shadow-2xl w-full max-w-md border-y-4 border-shinobi-gold">
+                    <h2 className="font-scholar text-2xl text-center uppercase tracking-widest mb-2">Inscripción al <span className="text-orange-600">Dojo</span></h2>
+                    <p className="text-center text-[10px] text-gray-500 uppercase tracking-tighter mb-6">Valida tu identidad institucional</p>
+
+                    {mensaje.texto && (
+                        <div className={`p-3 mb-4 text-xs font-bold border-l-4 ${mensaje.tipo === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-600 text-red-700'}`}>
+                            {mensaje.texto}
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* NOMBRE */}
+                        <div>
+                            <label className="block text-[10px] font-bold uppercase text-gray-600 mb-1">Nombre Real</label>
+                            <input name="nombre_completo" required type="text" value={formData.nombre_completo} onChange={handleChange}
+                                className="w-full bg-white/50 border-b-2 border-gray-300 p-2 outline-none focus:border-shinobi-gold transition-all" placeholder="Tu nombre" />
                         </div>
 
-                        {mensaje.texto && (
-                            <div className={`p-3 mb-6 text-xs font-bold border-l-4 animate-pulse ${
-                                mensaje.tipo === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-shinobi-red text-shinobi-red'
-                            }`}>
-                                {mensaje.tipo === 'success' ? '✅ ' : '⚠️ '}
-                                {mensaje.texto}
+                        {/* CORREO Y DETECCIÓN DE ROL */}
+                        <div>
+                            <div className="flex justify-between items-end mb-1">
+                                <label className="block text-[10px] font-bold uppercase text-gray-600">Correo</label>
+                                {detectedRole && <span className="text-[9px] bg-shinobi-gold/20 text-orange-800 px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">Rol: {detectedRole}</span>}
                             </div>
-                        )}
-
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label className="block font-scholar text-[11px] text-shinobi-dark mb-1 uppercase tracking-wider">Nombre Completo</label>
-                                <input 
-                                    name="nombre_completo" required type="text" 
-                                    value={formData.nombre_completo} onChange={handleChange}
-                                    className="w-full bg-transparent border-b-2 border-shinobi-dark/20 p-2 focus:border-shinobi-orange outline-none text-shinobi-dark font-modern transition-all"
-                                    placeholder="Ej: Mauri Rodriguez"
-                                />
-                            </div>
-                            <div>
-                                <label className="block font-scholar text-[11px] text-shinobi-dark mb-1 uppercase tracking-wider">Correo Institucional o Personal</label>
-                                <input 
-                                    name="correo" required type="email" 
-                                    value={formData.correo} onChange={handleChange}
-                                    className="w-full bg-transparent border-b-2 border-shinobi-dark/20 p-2 focus:border-shinobi-orange outline-none text-shinobi-dark font-modern transition-all"
-                                    placeholder="ejemplo@profesores.uniajc.edu.co"
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block font-scholar text-[11px] text-shinobi-dark mb-1 uppercase tracking-wider">Contraseña</label>
-                                    <input 
-                                        name="password" required type="password" 
-                                        value={formData.password} onChange={handleChange}
-                                        className="w-full bg-transparent border-b-2 border-shinobi-dark/20 p-2 focus:border-shinobi-orange outline-none text-shinobi-dark transition-all"
-                                        placeholder="••••••••"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block font-scholar text-[11px] text-shinobi-dark mb-1 uppercase tracking-wider">Confirmar</label>
-                                    <input 
-                                        name="confirmarPassword" required type="password" 
-                                        value={formData.confirmarPassword} onChange={handleChange}
-                                        className="w-full bg-transparent border-b-2 border-shinobi-dark/20 p-2 focus:border-shinobi-orange outline-none text-shinobi-dark transition-all"
-                                        placeholder="••••••••"
-                                    />
-                                </div>
-                            </div>
-                            
-                            <button 
-                                type="submit" disabled={loading || mensaje.tipo === 'success'}
-                                className={`w-full mt-6 bg-shinobi-dark text-shinobi-gold font-scholar py-3 tracking-widest hover:bg-shinobi-orange hover:text-white transition-all shadow-md active:scale-95 uppercase text-sm ${(loading || mensaje.tipo === 'success') ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                                {loading ? 'Forjando...' : 'Confirmar Inscripción'}
-                            </button>
-                        </form>
-
-                        <div className="mt-6 text-center">
-                            <p className="text-slate-500 font-modern text-[10px] uppercase tracking-widest">
-                                ¿Ya eres parte de la academia? 
-                                <Link to="/" className="ml-2 text-shinobi-dark font-bold hover:text-shinobi-orange transition-all">Volver al Login</Link>
-                            </p>
+                            <input name="correo" required type="email" value={formData.correo} onChange={handleChange}
+                                className="w-full bg-white/50 border-b-2 border-gray-300 p-2 outline-none focus:border-shinobi-gold transition-all" placeholder="ninja@uniajc.edu.co" />
                         </div>
+
+                        {/* CONTRASEÑA Y FUERZA */}
+                        <div>
+                            <label className="block text-[10px] font-bold uppercase text-gray-600 mb-1">Nueva Clave</label>
+                            <input name="password" required type="password" value={formData.password} onChange={handleChange}
+                                className="w-full bg-white/50 border-b-2 border-gray-300 p-2 outline-none focus:border-shinobi-gold transition-all" placeholder="••••••••" />
+                            <div className="mt-2 h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+                                <div className={`h-full transition-all duration-500 ${strength.color}`} style={{ width: strength.width }}></div>
+                            </div>
+                            <p className="text-[9px] mt-1 text-right font-bold text-gray-500 uppercase">{strength.label}</p>
+                        </div>
+
+                        {/* CONFIRMACIÓN */}
+                        <div>
+                            <label className="block text-[10px] font-bold uppercase text-gray-600 mb-1">Confirmar Clave</label>
+                            <input name="confirmarPassword" required type="password" value={formData.confirmarPassword} onChange={handleChange}
+                                className={`w-full bg-white/50 border-b-2 p-2 outline-none transition-all ${passwordMatch ? 'border-gray-300 focus:border-shinobi-gold' : 'border-red-500 bg-red-50'}`} placeholder="••••••••" />
+                            {!passwordMatch && <p className="text-[9px] text-red-600 font-bold mt-1 uppercase">El sello no coincide</p>}
+                        </div>
+
+                        <button type="submit" disabled={loading || !passwordMatch}
+                            className="w-full bg-gray-900 text-shinobi-gold py-3 font-scholar tracking-widest hover:bg-orange-600 hover:text-white transition-all disabled:opacity-50 uppercase text-xs shadow-xl">
+                            {loading ? 'Sellando Pergamino...' : 'Unirse a la Academia'}
+                        </button>
+                    </form>
+
+                    <div className="mt-6 text-center">
+                        <Link to="/" className="text-[10px] text-gray-500 hover:text-orange-600 uppercase tracking-widest font-bold transition-all">
+                            Ya tengo un sello de acceso
+                        </Link>
                     </div>
                 </div>
             </div>
