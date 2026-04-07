@@ -43,7 +43,7 @@ exports.register = async (req, res) => {
             hash_password,
             rol: rolAsignado,
             verificado: false, // Auto-verificado para evitar fricción inicial, se puede cambiar a false si se desea verificación manual
-            estado: 'Activo',
+            estado: 'Inactivo',
             fecha_registro: new Date()
         });
 
@@ -66,7 +66,7 @@ exports.register = async (req, res) => {
             try {
                 // TODO: Cambiar 'onboarding@resend.dev' por dominio real en producción
                 await resend.emails.send({
-                    from: 'Academia PMM <onboarding@resend.dev>',
+                    from: 'Academia PMM <admin@academiapmm.online>',
                     to: correo,
                     subject: "⚔️ Activa tu Sello Ninja en PMM Interactivo",
                     html: `
@@ -294,7 +294,7 @@ exports.forgotPassword = async (req, res) => {
 
         if (resend) {
             await resend.emails.send({
-                from: 'Seguridad PMM <onboarding@resend.dev>',
+                from: 'Seguridad PMM <admin@academiapmm.online>',
                 to: correo,
                 subject: "🗝️ Recuperación de acceso a PMM Interactivo",
                 html: `
