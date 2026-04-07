@@ -51,12 +51,12 @@ exports.register = async (req, res) => {
         const tokenVerificacion = jwt.sign(
             { id_usuario: nuevoUsuario.id_usuario },
             process.env.JWT_SECRET,
-            { expiresIn: '24h' }
+            { expiresIn: '48h' }
         );
 
         // 🛡️ Persistencia del token de verificación
         nuevoUsuario.verification_token = tokenVerificacion;
-        nuevoUsuario.verification_token_expiry = Date.now() + 86400000; // 24h
+        nuevoUsuario.verification_token_expiry = Date.now() + 172800000; // 48h
         await nuevoUsuario.save();
 
         const urlConfirmacion = `${process.env.FRONTEND_URL}/verificar-correo/${tokenVerificacion}`;
@@ -122,13 +122,21 @@ exports.verificarCorreo = async (req, res) => {
         // 4. Activación Real e Invalidación de Token
         usuario.verificado = true;
         usuario.estado = 'Activo';
-        usuario.verification_token = null; 
+        usuario.verification_token = "";
         usuario.verification_token_expiry = null;
         await usuario.save();
 
         res.status(200).json({ mensaje: '¡Tu cuenta ha sido activada exitosamente! Ya puedes iniciar sesión.' });
 
     } catch (error) {
+        console.error('---  FALLO CRÍTICO DE TOKEN  ---');
+        console.error('Nombre del error:', error.name);
+        console.error('Mensaje técnico:', error.message);
+
+        // Esto nos dirá si el problema es la firma (llave) o el tiempo (reloj)
+        if (error.name === 'JsonWebTokenError') console.error('❌ ERROR: La firma no coincide. Revisa el JWT_SECRET.');
+        if (error.name === 'TokenExpiredError') console.error('❌ ERROR: El token expiró según el reloj del servidor.');
+
         res.status(401).json({ mensaje: 'Token corrupto o expirado.' });
     }
 };
@@ -142,7 +150,7 @@ exports.login = async (req, res) => {
         const usuario = await Usuario.findOne({ where: { correo } });
 
         if (!usuario) return res.status(404).json({ mensaje: 'Credenciales inválidas.' });
-        
+
         // 🛡️ Validación de Cuenta Activa
         if (!usuario.verificado) return res.status(403).json({ mensaje: 'Cuenta no activa. Por favor, verifica tu correo.' });
 
@@ -162,8 +170,8 @@ exports.login = async (req, res) => {
         await usuario.save();
 
         const token = jwt.sign(
-            { id_usuario: usuario.id_usuario, rol: usuario.rol }, 
-            process.env.JWT_SECRET, 
+            { id_usuario: usuario.id_usuario, rol: usuario.rol },
+            process.env.JWT_SECRET,
             { expiresIn: '8h' }
         );
 
@@ -191,7 +199,7 @@ exports.login = async (req, res) => {
 exports.googleLogin = async (req, res) => {
     try {
         const { token } = req.body;
-        
+
         const ticket = await client.verifyIdToken({
             idToken: token,
             audience: process.env.GOOGLE_CLIENT_ID,
@@ -275,18 +283,18 @@ exports.forgotPassword = async (req, res) => {
         }
 
         const tokenRecuperacion = jwt.sign(
-            { id_usuario: usuario.id_usuario }, 
-            process.env.JWT_SECRET, 
-            { expiresIn: '15m' }
+            { id_usuario: usuario.id_usuario },
+            process.env.JWT_SECRET,
+            { expiresIn: '2h' }
         );
 
         // 🛡️ Persistencia de Reset Token
         usuario.reset_token = tokenRecuperacion;
-        usuario.reset_token_expiry = Date.now() + 900000; // 15 min
+        usuario.reset_token_expiry = Date.now() + 7200000; // 2 hours
         await usuario.save();
 
         const urlRecuperacion = `${process.env.FRONTEND_URL}/reset-password/${tokenRecuperacion}`;
-        
+
         // 🛡️ Logs limpios en producción
         if (process.env.NODE_ENV !== "production") {
             console.log(`🗝️ [DEV LOG] Token de recuperación para ${correo}: ${urlRecuperacion}`);
@@ -341,9 +349,9 @@ exports.resetPassword = async (req, res) => {
         // 🔐 Encriptar nueva clave
         const salt = await bcrypt.genSalt(10);
         usuario.hash_password = await bcrypt.hash(nuevaPassword, salt);
-        
+
         // 🛡️ Invalidar tokens (Single Use)
-        usuario.reset_token = null;
+        usuario.reset_token = "";
         usuario.reset_token_expiry = null;
         await usuario.save();
 
