@@ -6,7 +6,7 @@ const { OAuth2Client } = require('google-auth-library');
 const db = require('../config/database');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// 🛡️ INFRAESTRUCTURA DE CORREO (Fallback Seguro)
+//  INFRAESTRUCTURA DE CORREO (Fallback Seguro)
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 if (!resend) console.warn("⚠️ [CONFIG] RESEND_API_KEY no detectada. Modo simulacro activo.");
 
@@ -42,7 +42,7 @@ exports.register = async (req, res) => {
             correo,
             hash_password,
             rol: rolAsignado,
-            verificado: true, // Auto-verificado para evitar fricción inicial, se puede cambiar a false si se desea verificación manual
+            verificado: false, // Auto-verificado para evitar fricción inicial, se puede cambiar a false si se desea verificación manual
             estado: 'Activo',
             fecha_registro: new Date()
         });
