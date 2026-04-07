@@ -67,7 +67,7 @@ const Registro = () => {
             });
 
             setMensaje({ 
-                texto: '¡Registro exitoso! ', 
+                texto: '¡Registro exitoso! Revisa tu correo para activar tu cuenta.', 
                 tipo: 'success' 
             });
             

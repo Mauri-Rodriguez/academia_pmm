@@ -115,6 +115,18 @@ const DashboardEstudiante = () => {
                 className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] bg-[#080C14] border-r border-white/5 flex flex-col p-6 hidden md:flex z-50 
                 ${isExpanded ? 'w-72 shadow-[20px_0_50px_rgba(0,0,0,0.5)]' : 'w-24'}`}
             >
+                {/* 🚩 BOTÓN ABANDONAR (AHORA EN LA PARTE SUPERIOR) */}
+                <button 
+                    onClick={() => {localStorage.clear(); navigate('/')}} 
+                    className="mb-8 group flex items-center gap-4 p-3 text-rose-500/60 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all uppercase font-scholar text-[10px] tracking-widest w-full"
+                >
+                    <span className="text-xl group-hover:scale-110 transition-transform">🚪</span>
+                    <span className={`${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'} transition-all duration-500 whitespace-nowrap`}>
+                        ABANDONAR
+                    </span>
+                </button>
+
+                {/* Perfil del Ninja */}
                 <div className="mb-12 text-center relative">
                     <div className={`absolute -inset-2 rounded-full blur-xl opacity-20 ${configGlobal.bar}`}></div>
                     <div 
@@ -136,6 +148,7 @@ const DashboardEstudiante = () => {
                     </p>
                 </div>
 
+                {/* Menú de Navegación */}
                 <nav className="flex-1 space-y-4">
                     {navItems.map((item) => (
                         <button 
@@ -151,11 +164,6 @@ const DashboardEstudiante = () => {
                         </button>
                     ))}
                 </nav>
-
-                <button onClick={() => {localStorage.clear(); navigate('/')}} className="mt-auto flex items-center gap-4 p-3 text-rose-500/50 hover:text-rose-500 transition-all uppercase font-scholar text-[10px] tracking-widest">
-                    <span className="text-lg">🚪</span>
-                    <span className={`${isExpanded ? 'opacity-100' : 'opacity-0'} transition-opacity`}>ABANDONAR</span>
-                </button>
             </aside>
 
             {/* 🚩 NAVEGACIÓN MÓVIL (BOTTOM BAR) */}
@@ -276,7 +284,7 @@ const DashboardEstudiante = () => {
                     </div>
                 </div>
 
-                {/* 🚩 SECCIÓN 3: ESTADÍSTICAS RÁPIDAS (MODIFICADA PARA 4 COLUMNAS CON RACHA NINJA) */}
+                {/* 🚩 SECCIÓN 3: ESTADÍSTICAS RÁPIDAS */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-10">
                     
                     {/* 🚩 Tarjeta Especial: Fuego Ninja (Racha) */}

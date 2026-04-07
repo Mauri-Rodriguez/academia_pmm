@@ -22,9 +22,7 @@ const Login = () => {
         'hotmail.com'
     ];
 
-    // 🚩 FUNCIÓN MAESTRA: Sincroniza la identidad en toda la aldea
-// 🚩 FUNCIÓN MAESTRA: Sincroniza la identidad en toda la aldea
-// 🚩 FUNCIÓN MAESTRA BLINDADA
+    // FUNCIÓN MAESTRA: Sincroniza la identidad en toda la aldea
 const guardarSesion = (token, usuario, requiereDiagnostico) => {
     localStorage.clear(); 
     localStorage.setItem('token', token); 
@@ -51,7 +49,7 @@ const guardarSesion = (token, usuario, requiereDiagnostico) => {
 const handleGoogleSuccess = async (credentialResponse) => {
         setLoading(true);
         try {
-            // ✅ EL CAMBIO MÁGICO: Le agregamos el /api al inicio de la ruta
+            // Le agregamos el /api al inicio de la ruta
             const res = await api.post('/api/auth/google-login', { 
                 token: credentialResponse.credential 
             });
