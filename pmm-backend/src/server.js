@@ -13,18 +13,31 @@ const progresoRoutes = require('./routes/progresoRoutes');
 
 const app = express();
 
+
 // === MIDDLEWARES ===
-// === MIDDLEWARES ===
+const origenesPermitidos = [
+    'http://localhost:5173', 
+    process.env.FRONTEND_URL, 
+    'https://lucky-croquembouche-2c8b48.netlify.app', 
+    'https://academia-pmm.vercel.app'
+];
+
 app.use(cors({
-    origin: [
-        'http://localhost:5173', 
-        process.env.FRONTEND_URL, 
-        'https://lucky-croquembouche-2c8b48.netlify.app', 
-        'https://academia-pmm.vercel.app'
-    ],
+    origin: function (origin, callback) {
+        // 🛡️ BARRERA INTELIGENTE:
+        // Permite Postman (!origin), la lista exacta, O cualquier subdominio dinámico de Vercel
+        if (!origin || origenesPermitidos.includes(origin) || origin.endsWith('.vercel.app')) {
+            callback(null, true);
+        } else {
+            console.warn(`Bloqueado por CORS: ${origin}`);
+            callback(new Error('Dominio bloqueado por política CORS del Dojo'));
+        }
+    },
     credentials: true, 
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'] // Permite todos los métodos HTTP necesarios para tu API
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
