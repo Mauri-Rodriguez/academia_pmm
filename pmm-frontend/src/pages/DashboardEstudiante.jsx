@@ -2,7 +2,7 @@ import api, { BACKEND_URL } from '../api/api';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import api from '../api/api';
+
 
 const DashboardEstudiante = () => {
     const navigate = useNavigate();
