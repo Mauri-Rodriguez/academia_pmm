@@ -1,13 +1,17 @@
 import axios from 'axios';
 
 // 🛡️ MODO DINÁMICO: 
-// Limpiamos cualquier slash final de la variable de entorno y le inyectamos el '/api' a TODO.
+// Limpiamos cualquier slash final de la variable de entorno
 const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const baseUrlClean = rawUrl.replace(/\/$/, ''); // Quita el '/' extra si existe
 
+// 🚩 AQUÍ ESTÁ LA LÍNEA MÁGICA QUE FALTABA (La que soluciona tu error ❌)
+export const BACKEND_URL = baseUrlClean.replace(/\/api$/, '');
+
 const api = axios.create({
-    baseURL: baseUrlClean // 👈 Lo dejas limpio, SIN el + '/api'
+    baseURL: baseUrlClean 
 });
+
 // 1️⃣ INTERCEPTOR DE PETICIÓN: Inyecta el token en cada llamada
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token'); 
