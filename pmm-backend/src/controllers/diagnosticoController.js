@@ -127,12 +127,12 @@ exports.evaluarDiagnostico = async (req, res) => {
         if (idsModulosLegacy.length > 0) {
             // Otorgamos insignias automáticamente
             const queryInsignias = `
-                INSERT IGNORE INTO Usuarios_Insignias (id_usuario, id_insignia, fecha_otorgada)
+                INSERT IGNORE INTO usuarios_insignias (id_usuario, id_insignia, fecha_otorgada)
                 VALUES ${idsModulosLegacy.map(id => `(${id_usuario}, ${id}, NOW())`).join(', ')}`;
             
             // Seteamos progreso al 100% para los módulos saltados
             const queryProgreso = `
-                INSERT INTO Progreso_Estudiante (id_usuario, id_modulo, porcentaje_avance, intentos_realizados, ultima_actualizacion)
+                INSERT INTO progreso_estudiante (id_usuario, id_modulo, porcentaje_avance, intentos_realizados, ultima_actualizacion)
                 VALUES ${idsModulosLegacy.map(id => `(${id_usuario}, ${id}, 100, 1, NOW())`).join(', ')}
                 ON DUPLICATE KEY UPDATE porcentaje_avance = 100, ultima_actualizacion = NOW()`;
 
