@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import api from '../api/api';
+// 🚩 NUEVO: Importamos BACKEND_URL para arreglar las fotos
+import api, { BACKEND_URL } from '../api/api'; 
 import { useNavigate } from 'react-router-dom';
 
 const ForoComunidad = () => {
@@ -23,12 +24,19 @@ const ForoComunidad = () => {
     const [nuevoComentario, setNuevoComentario] = useState("");
     const [enviandoComentario, setEnviandoComentario] = useState(false);
 
-    // 🚩 NUEVOS ESTADOS: EDICIÓN EN LÍNEA DE COMENTARIOS
+    // ESTADOS: EDICIÓN EN LÍNEA DE COMENTARIOS
     const [comentarioEditando, setComentarioEditando] = useState(null);
     const [textoComentarioEditado, setTextoComentarioEditado] = useState("");
 
     const [usuarioActualId, setUsuarioActualId] = useState(null);
     const fotoUsuarioActual = localStorage.getItem('user_avatar') || null;
+
+    // 🚩 NUEVO: Función helper para construir la URL absoluta de las imágenes
+    const obtenerUrlImagen = (ruta) => {
+        if (!ruta) return null;
+        if (ruta.startsWith('http')) return ruta; 
+        return `${BACKEND_URL}${ruta.startsWith('/') ? '' : '/'}${ruta}`;
+    };
 
     const generarColorAvatar = (nombre = "Anónimo") => {
         const colores = [
@@ -142,7 +150,6 @@ const ForoComunidad = () => {
         finally { setEnviandoComentario(false); }
     };
 
-    // 🚩 NUEVA FUNCIÓN: GUARDAR EDICIÓN DEL COMENTARIO
     const guardarEdicionComentario = async (id_comentario) => {
         if (!textoComentarioEditado.trim()) return;
         try {
@@ -217,7 +224,7 @@ const ForoComunidad = () => {
                                             style={{ backgroundColor: !mostrarAvatar ? generarColorAvatar(post.autor) : 'transparent' }}
                                         >
                                             {mostrarAvatar ? (
-                                                <img src={fotoUsuarioActual} alt={post.autor} className="w-full h-full object-cover" />
+                                                <img src={obtenerUrlImagen(fotoUsuarioActual)} alt={post.autor} className="w-full h-full object-cover" />
                                             ) : (
                                                 post.autor?.charAt(0).toUpperCase() || "N"
                                             )}
@@ -260,7 +267,7 @@ const ForoComunidad = () => {
                                 {post.imagen_url && (
                                     <div className="bg-black/40 border-y border-white/5 flex justify-center overflow-hidden">
                                         <img 
-                                            src={`${import.meta.env.VITE_API_URL}${post.imagen_url}`}
+                                            src={obtenerUrlImagen(post.imagen_url)}
                                             className="max-w-full h-auto max-h-[500px] object-contain hover:scale-[1.02] transition-transform duration-500" 
                                             alt="evidencia" 
                                         />
@@ -298,7 +305,7 @@ const ForoComunidad = () => {
                                 style={{ backgroundColor: !(Number(misionSeleccionada.id_usuario) === Number(usuarioActualId) && fotoUsuarioActual) ? generarColorAvatar(misionSeleccionada.autor) : 'transparent' }}
                             >
                                 {Number(misionSeleccionada.id_usuario) === Number(usuarioActualId) && fotoUsuarioActual ? (
-                                    <img src={fotoUsuarioActual} alt={misionSeleccionada.autor} className="w-full h-full object-cover" />
+                                    <img src={obtenerUrlImagen(fotoUsuarioActual)} alt={misionSeleccionada.autor} className="w-full h-full object-cover" />
                                 ) : (
                                     misionSeleccionada.autor?.charAt(0).toUpperCase() || "N"
                                 )}
@@ -313,7 +320,7 @@ const ForoComunidad = () => {
                             <h2 className="text-3xl text-white font-bold mb-6 italic leading-tight">"{misionSeleccionada.titulo}"</h2>
                             <p className="text-slate-300 text-base leading-relaxed mb-8">{misionSeleccionada.contenido}</p>
                             {misionSeleccionada.imagen_url && (
-                                <img src={`${import.meta.env.VITE_API_URL}${misionSeleccionada.imagen_url}`} className="w-full rounded-xl mb-8 border border-white/10 shadow-lg" alt="evidencia" />
+                                <img src={obtenerUrlImagen(misionSeleccionada.imagen_url)} className="w-full rounded-xl mb-8 border border-white/10 shadow-lg" alt="evidencia" />
                             )}
                         </div>
 
@@ -332,13 +339,12 @@ const ForoComunidad = () => {
                                                 style={{ backgroundColor: !mostrarAvatarComentario ? generarColorAvatar(c.autor) : 'transparent' }}
                                             >
                                                 {mostrarAvatarComentario ? (
-                                                    <img src={fotoUsuarioActual} alt={c.autor} className="w-full h-full object-cover" />
+                                                    <img src={obtenerUrlImagen(fotoUsuarioActual)} alt={c.autor} className="w-full h-full object-cover" />
                                                 ) : (
                                                     c.autor?.charAt(0).toUpperCase() || "N"
                                                 )}
                                             </div>
                                             
-                                            {/* 🚩 CONTENEDOR DEL COMENTARIO CON LÓGICA DE EDICIÓN */}
                                             <div className="bg-[#1A2131] p-4 rounded-2xl rounded-tl-none flex-1 relative group">
                                                 <div className="flex justify-between items-center mb-1">
                                                     <span className="text-xs font-black text-shinobi-gold">{c.autor || "Ninja"}</span>
@@ -372,7 +378,6 @@ const ForoComunidad = () => {
                                                     )}
                                                 </div>
 
-                                                {/* 🚩 RENDER CONDICIONAL: Texto normal o Textarea de edición */}
                                                 {comentarioEditando === c.id_comentario ? (
                                                     <div className="mt-2 flex flex-col gap-2">
                                                         <textarea
@@ -412,7 +417,7 @@ const ForoComunidad = () => {
                                     style={{ backgroundColor: !fotoUsuarioActual ? generarColorAvatar("Tú") : 'transparent' }}
                                 >
                                     {fotoUsuarioActual ? (
-                                        <img src={fotoUsuarioActual} alt="Tú" className="w-full h-full object-cover" />
+                                        <img src={obtenerUrlImagen(fotoUsuarioActual)} alt="Tú" className="w-full h-full object-cover" />
                                     ) : (
                                         "T"
                                     )}

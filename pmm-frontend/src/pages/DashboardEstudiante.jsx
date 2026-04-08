@@ -1,3 +1,4 @@
+import api, { BACKEND_URL } from '../api/api';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -117,6 +118,11 @@ const DashboardEstudiante = () => {
         { label: 'FORO', path: '/estudiante/foro', icon: '👥' },
     ];
 
+    const obtenerUrlImagen = (ruta) => {
+        if (!ruta) return null;
+        if (ruta.startsWith('http')) return ruta;
+        return `${BACKEND_URL}${ruta.startsWith('/') ? '' : '/'}${ruta}`;
+    };
     return (
         <div className="min-h-screen bg-[#05070A] flex text-slate-300 font-modern overflow-hidden selection:bg-shinobi-gold/30">
 
@@ -147,7 +153,7 @@ const DashboardEstudiante = () => {
                         ${configGlobal.border} ${isExpanded ? 'w-16 h-16 rotate-[360deg]' : 'w-12 h-12'}`}
                     >
                         {fotoPerfil ? (
-                            <img src={fotoPerfil} alt="Avatar" className="w-full h-full object-cover" />
+                          <img src={obtenerUrlImagen(fotoPerfil)} alt="Avatar" className="w-full h-full object-cover" />
                         ) : (
                             <span className={`font-scholar transition-all font-bold ${isExpanded ? 'text-2xl' : 'text-lg'} ${configGlobal.color}`}>
                                 {nombreUsuario.charAt(0).toUpperCase()}
