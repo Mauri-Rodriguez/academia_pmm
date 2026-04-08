@@ -110,6 +110,7 @@ exports.evaluarDiagnostico = async (req, res) => {
             nivel_asignado: nivelAsignado,
             fecha_realizacion: new Date() 
         }, { transaction: t });
+
         await sequelize.query(
             'UPDATE usuarios SET rango = ?, rango_actual = ? WHERE id_usuario = ?',
             { replacements: [nivelAsignado, nivelAsignado, id_usuario], transaction: t }
@@ -117,6 +118,7 @@ exports.evaluarDiagnostico = async (req, res) => {
 
         // 🚩 4. LÓGICA DE HERENCIA: Insignias y Progreso Dinámico (RF-07)
         let idsModulosLegacy = [];
+        let idsMedallasRango = []; // 🚩 Arreglo para guardar el Sello del Rango oficial
 
         // Definición de jerarquía según los IDs de tu base de datos
         const modulosGenin = [1, 2, 10, 11];
@@ -124,23 +126,34 @@ exports.evaluarDiagnostico = async (req, res) => {
 
         if (nivelAsignado.includes('Chunin')) {
             idsModulosLegacy = [...modulosGenin];
+            idsMedallasRango = [101]; // 🚩 Otorga el Sello Chunin
         } else if (nivelAsignado.includes('Jonin')) {
             idsModulosLegacy = [...modulosGenin, ...modulosChunin];
+            idsMedallasRango = [101, 102]; // 🚩 Otorga Sello Chunin y Sello Jonin
+        } else if (nivelAsignado.includes('Kage')) {
+            idsModulosLegacy = [...modulosGenin, ...modulosChunin]; 
+            idsMedallasRango = [101, 102, 103]; // 🚩 Otorga todos los sellos
+        }
+
+        // Unimos todas las insignias que el ninja debe recibir (Módulos completados + Rangos)
+        const todasLasInsignias = [...idsModulosLegacy, ...idsMedallasRango];
+
+        if (todasLasInsignias.length > 0) {
+            // Otorgamos TODAS las insignias automáticamente
+            const queryInsignias = `
+                INSERT IGNORE INTO usuarios_insignias (id_usuario, id_insignia, fecha_otorgada)
+                VALUES ${todasLasInsignias.map(id => `(${id_usuario}, ${id}, NOW())`).join(', ')}`;
+            
+            await sequelize.query(queryInsignias, { transaction: t });
         }
 
         if (idsModulosLegacy.length > 0) {
-            // Otorgamos insignias automáticamente
-            const queryInsignias = `
-                INSERT IGNORE INTO usuarios_insignias (id_usuario, id_insignia, fecha_otorgada)
-                VALUES ${idsModulosLegacy.map(id => `(${id_usuario}, ${id}, NOW())`).join(', ')}`;
-            
-            // Seteamos progreso al 100% para los módulos saltados
+            // Seteamos progreso al 100% SOLO para los módulos saltados (No aplica para medallas de rango)
             const queryProgreso = `
                 INSERT INTO progreso_estudiante (id_usuario, id_modulo, porcentaje_avance, intentos_realizados, ultima_actualizacion)
                 VALUES ${idsModulosLegacy.map(id => `(${id_usuario}, ${id}, 100, 1, NOW())`).join(', ')}
                 ON DUPLICATE KEY UPDATE porcentaje_avance = 100, ultima_actualizacion = NOW()`;
 
-            await sequelize.query(queryInsignias, { transaction: t });
             await sequelize.query(queryProgreso, { transaction: t });
         }
 
@@ -152,7 +165,8 @@ exports.evaluarDiagnostico = async (req, res) => {
                 correctas: respuestasCorrectas,
                 total: totalPreguntas,
                 rango_asignado: nivelAsignado,
-                insignias_heredadas: idsModulosLegacy.length
+                insignias_heredadas: idsModulosLegacy.length,
+                sellos_obtenidos: idsMedallasRango.length
             },
             detalle: detalleRespuestas // <-- Enviamos el detalle al frontend aquí
         });
@@ -161,5 +175,32 @@ exports.evaluarDiagnostico = async (req, res) => {
         if (t) await t.rollback();
         console.error('Error al evaluar el diagnóstico:', error);
         res.status(500).json({ mensaje: 'Error interno del servidor al procesar las respuestas.' });
+    }
+};
+
+// ============================================================================
+// 🛠️ RUTA DE DESARROLLO: Resetear progreso para pruebas
+// ============================================================================
+exports.resetearProgresoPruebas = async (req, res) => {
+    const sequelize = Diagnostico.sequelize;
+    const t = await sequelize.transaction();
+
+    try {
+        const id_usuario = req.usuario?.id_usuario || req.user?.id_usuario;
+
+        // Borramos todo el rastro del usuario en progreso, insignias y diagnósticos
+        await sequelize.query(`DELETE FROM progreso_estudiante WHERE id_usuario = ${id_usuario}`, { transaction: t });
+        await sequelize.query(`DELETE FROM usuarios_insignias WHERE id_usuario = ${id_usuario}`, { transaction: t });
+        await sequelize.query(`DELETE FROM diagnostico WHERE id_usuario = ${id_usuario}`, { transaction: t });
+
+        // Regresamos el rango a Genin en la tabla usuarios
+        await sequelize.query(`UPDATE usuarios SET rango = 'Genin (Iniciado)', rango_actual = 'Genin (Iniciado)' WHERE id_usuario = ${id_usuario}`, { transaction: t });
+
+        await t.commit();
+        res.status(200).json({ mensaje: '¡Progreso reseteado! Ahora eres un ninja novato de nuevo.' });
+    } catch (error) {
+        if (t) await t.rollback();
+        console.error('Error reseteando:', error);
+        res.status(500).json({ mensaje: 'Error al limpiar la base de datos.' });
     }
 };
