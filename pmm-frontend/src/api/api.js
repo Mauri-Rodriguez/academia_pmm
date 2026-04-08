@@ -1,5 +1,5 @@
 import axios from 'axios';
-
+export const BACKEND_URL = baseUrlClean.replace(/\/api$/, '');
 const api = axios.create({
     // Vite: Si está en la nube usa VITE_API_URL, si estás programando en tu PC usa localhost
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
