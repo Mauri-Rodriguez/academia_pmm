@@ -8,14 +8,16 @@ const Diagnostico = () => {
     const [respuestas, setRespuestas] = useState({});
     const [loading, setLoading] = useState(true); 
     const [enviando, setEnviando] = useState(false);
+    
+    // 🚩 NUEVO ESTADO: Controla si el usuario ya leyó las instrucciones
+    const [examenIniciado, setExamenIniciado] = useState(false);
+    
     const navigate = useNavigate();
 
     useEffect(() => {
         const obtenerPreguntas = async () => {
             try {
-                // Si la ruta en tu backend cambió, asegúrate de que esta coincida con tus routes
                 const res = await api.get('/api/diagnostico/preguntas'); 
-                // Asumiendo que el backend devuelve { data: [...] } según el controlador anterior
                 setPreguntas(res.data.data || res.data); 
             } catch (err) {
                 console.error("Error al invocar el banco de preguntas:", err);
@@ -37,23 +39,20 @@ const Diagnostico = () => {
     const finalizarPrueba = async () => {
         setEnviando(true);
         try {
-            // 1. Transformamos el estado 'respuestas' (objeto) al formato array que espera el backend
             const formatoRespuestas = Object.keys(respuestas).map(id_pregunta => ({
                 id_pregunta: parseInt(id_pregunta),
                 respuesta: respuestas[id_pregunta]
             }));
 
-            // 2. Enviamos el array al nuevo endpoint de evaluación
             const res = await api.post('/api/diagnostico/evaluar', {
                 respuestas: formatoRespuestas 
             });
 
-            // 3. Navegamos a la vista de resultados pasando TODA la información nueva
             navigate('/estudiante/resultado', { 
                 state: { 
                     rango: res.data.resultados.rango_asignado, 
                     aciertos: res.data.resultados.correctas,
-                    detalle: res.data.detalle // ¡Aquí pasamos el pergamino de errores!
+                    detalle: res.data.detalle 
                 } 
             });
 
@@ -73,18 +72,59 @@ const Diagnostico = () => {
 
     if (preguntas.length === 0) return <p className="text-white">No hay preguntas disponibles.</p>;
 
+    // 🚩 VISTA 1: INSTRUCCIONES DEL EXAMEN (ANTES DE INICIAR)
+    if (!examenIniciado) {
+        return (
+            <div className="min-h-screen bg-shinobi-dark flex flex-col items-center justify-center p-6">
+                <div className="max-w-2xl w-full bg-[#f4f1e1] p-10 md:p-14 rounded-sm border-t-8 border-shinobi-orange shadow-2xl relative overflow-hidden text-center animate-in fade-in zoom-in duration-500">
+                    
+                    {/* Marca de agua decorativa */}
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none">
+                        <span className="text-[200px] font-scholar text-shinobi-dark">⛩️</span>
+                    </div>
+
+                    <div className="relative z-10">
+                        <p className="text-shinobi-orange font-scholar text-sm uppercase tracking-[0.3em] mb-4 font-bold">Protocolo de Evaluación</p>
+                        <h1 className="text-3xl md:text-4xl font-scholar text-shinobi-dark uppercase mb-8 leading-tight">
+                            Análisis de <span className="text-shinobi-orange">Habilidades Matemáticas</span>
+                        </h1>
+
+                        <div className="bg-white/50 border border-slate-200 p-6 md:p-8 rounded-xl text-left space-y-4 mb-10 shadow-inner">
+                            <p className="text-slate-700 font-modern text-lg leading-relaxed">
+                                Antes de iniciar, debes saber que a continuación se realizará un cuestionario midiendo tus habilidades actuales en matemáticas.
+                            </p>
+                            <p className="text-slate-700 font-modern text-lg leading-relaxed">
+                                El objetivo de esta prueba es <strong>recomendarte qué ejercicios hacer</strong> y detectar si tienes falencias en algunos temas para así adaptar tu ruta de entrenamiento y ayudarte a mejorar.
+                            </p>
+                            <p className="text-slate-500 font-modern text-sm italic mt-4">
+                                * Responde con honestidad. Si no conoces una respuesta, confía en tu intuición.
+                            </p>
+                        </div>
+
+                        <button 
+                            onClick={() => setExamenIniciado(true)}
+                            className="group relative px-12 py-5 bg-shinobi-dark text-shinobi-gold font-black uppercase tracking-[0.3em] text-[12px] md:text-sm rounded-full hover:bg-shinobi-orange hover:text-white transition-all shadow-xl hover:scale-105 active:scale-95"
+                        >
+                            Aceptar el Desafío
+                            <span className="ml-4 group-hover:translate-x-2 inline-block transition-transform">→</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // 🚩 VISTA 2: EL EXAMEN 
     const pActual = preguntas[paso];
     const opcionesKeys = ['opcion_a', 'opcion_b', 'opcion_c', 'opcion_d'];
 
     return (
         <div className="min-h-screen bg-shinobi-dark flex flex-col items-center justify-center p-4">
-
-            <div className="max-w-2xl w-full bg-[#f4f1e1] p-10 rounded-sm border-t-8 border-shinobi-orange shadow-2xl relative overflow-hidden">
+            <div className="max-w-2xl w-full bg-[#f4f1e1] p-10 rounded-sm border-t-8 border-shinobi-orange shadow-2xl relative overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="absolute -right-4 -bottom-4 opacity-5 pointer-events-none">
                     <span className="text-9xl font-scholar text-shinobi-dark">Σ</span>
                 </div>
 
-                {/* 🚩 EL ESCUDO NINJA: key={paso} obliga a React a recrear esta sección en cada pregunta */}
                 <div key={paso}>
                     <div className="mb-8 flex justify-between items-end">
                         <div>
