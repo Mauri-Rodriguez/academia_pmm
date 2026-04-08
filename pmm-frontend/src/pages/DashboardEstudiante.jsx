@@ -18,7 +18,7 @@ const DashboardEstudiante = () => {
     // 🚩 CARGA DE DATOS CENTRALIZADA
     const cargarDatosDashboard = useCallback(async () => {
         try {
-            const [resDash, resErrores] = await Promise.all([
+            const [resDash, resErrores, resPerfil] = await Promise.all([
                 api.get('/api/estudiante/dashboard'),
                 api.get('/api/estudiante/errores-recientes'),
                 api.get('/api/estudiante/perfil/datos')
