@@ -21,7 +21,7 @@ const DashboardEstudiante = () => {
             const [resDash, resErrores] = await Promise.all([
                 api.get('/api/estudiante/dashboard'),
                 api.get('/api/estudiante/errores-recientes'),
-                api.get('/api/estudiante/perfil')
+                api.get('/api/estudiante/perfil/datos')
             ]);
 
             setDatos(resDash.data);
