@@ -110,6 +110,10 @@ exports.evaluarDiagnostico = async (req, res) => {
             nivel_asignado: nivelAsignado,
             fecha_realizacion: new Date() 
         }, { transaction: t });
+        await sequelize.query(
+            'UPDATE usuarios SET rango = ?, rango_actual = ? WHERE id_usuario = ?',
+            { replacements: [nivelAsignado, nivelAsignado, id_usuario], transaction: t }
+        );
 
         // 🚩 4. LÓGICA DE HERENCIA: Insignias y Progreso Dinámico (RF-07)
         let idsModulosLegacy = [];
