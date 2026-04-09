@@ -80,6 +80,19 @@ exports.registrarFallo = async (req, res) => {
             fecha_error: new Date()
         });
 
+        const [fallosHoy] = await db.query(`
+            SELECT COUNT(*) as total FROM historial_errores 
+            WHERE id_usuario = ? AND DATE(fecha_error) = CURDATE()`, 
+            { replacements: [id_usuario], type: db.QueryTypes.SELECT }
+        );
+
+        if (fallosHoy && fallosHoy.total === 5) {
+            await crearNotificacion(
+                id_usuario, 
+                "⚠️ El Oráculo nota turbulencia en tu chakra. Tómate un respiro, revisa la biblioteca y vuelve a intentarlo."
+            );
+        }
+
         return res.status(201).json({ explicacion_ia: explicacionIA });
     } catch (e) {
         console.error("Error crítico en registrarFallo:", e);
@@ -167,51 +180,51 @@ exports.finalizarModulo = async (req, res) => {
         // 3. EVALUAR ASCENSO DE RANGO
         //
         // Aquí podrías llamar a una función que revise el progreso total del usuario y actualice su rango si es necesario.
-let insigniaInfo = null;
-try {
-    const [resInsignia] = await db.query(
-        'SELECT id_insignia, nombre_insignia as nombre FROM insignias WHERE id_insignia = ? LIMIT 1',
-        { replacements: [id_modulo], type: db.QueryTypes.SELECT, transaction: t }
-    );
+        let insigniaInfo = null;
+        try {
+            const [resInsignia] = await db.query(
+                'SELECT id_insignia, nombre_insignia as nombre FROM insignias WHERE id_insignia = ? LIMIT 1',
+                { replacements: [id_modulo], type: db.QueryTypes.SELECT, transaction: t }
+            );
 
-    if (resInsignia) {
-        // Diccionario de Emojis 
-        const emojis = {
-            1: "🧬",  // Genio del Álgebra
-            2: "🔍",  // Cazador de Incógnitas
-            3: "📉",  // Maestro de la Recta
-            4: "📐",  // Señor de los Triángulos
-            5: "♾️",  // Dominador del Infinito
-            6: "📈",  // Rey de la Tasa de Cambio
-            7: "📊",  // Sabio del Área
-            10: "⚖️", // Guerrero del Equilibrio
-            11: "🗺️", // Estratega del Plano
-            12: "🏹", // Arquitecto de Parábolas
-            14: "🌑", // Místico de las Sombras
-            15: "🌱", // Viajero del Crecimiento
-            16: "🛡️", // Guardián de la Aproximación
-            17: "🧪", // Alquimista de Senos
-            18: "🔭", // Visionario del Horizonte
-            19: "👣", // Rastreador de Cambios
-            20: "⛓️", // Sabio de las Reglas Reales
-            21: "🎯", // Estratega de lo Absoluto
-            22: "🏰", // Guardián de las Áreas
-            23: "✂️", // Estratega de la División
-            24: "🧊", // Conquistador de Sólidos
-            25: "🏺", // Gran Maestre de Cilindros
-            101: "⚔️", // Sello Chunin
-            102: "⛩️", // Sello Jonin
-            103: "👑"  // Sello Kage
-        };
+            if (resInsignia) {
+                // Diccionario de Emojis 
+                const emojis = {
+                    1: "🧬",  // Genio del Álgebra
+                    2: "🔍",  // Cazador de Incógnitas
+                    3: "📉",  // Maestro de la Recta
+                    4: "📐",  // Señor de los Triángulos
+                    5: "♾️",  // Dominador del Infinito
+                    6: "📈",  // Rey de la Tasa de Cambio
+                    7: "📊",  // Sabio del Área
+                    10: "⚖️", // Guerrero del Equilibrio
+                    11: "🗺️", // Estratega del Plano
+                    12: "🏹", // Arquitecto de Parábolas
+                    14: "🌑", // Místico de las Sombras
+                    15: "🌱", // Viajero del Crecimiento
+                    16: "🛡️", // Guardián de la Aproximación
+                    17: "🧪", // Alquimista de Senos
+                    18: "🔭", // Visionario del Horizonte
+                    19: "👣", // Rastreador de Cambios
+                    20: "⛓️", // Sabio de las Reglas Reales
+                    21: "🎯", // Estratega de lo Absoluto
+                    22: "🏰", // Guardián de las Áreas
+                    23: "✂️", // Estratega de la División
+                    24: "🧊", // Conquistador de Sólidos
+                    25: "🏺", // Gran Maestre de Cilindros
+                    101: "⚔️", // Sello Chunin
+                    102: "⛩️", // Sello Jonin
+                    103: "👑"  // Sello Kage
+                };
 
-        insigniaInfo = {
-            nombre: resInsignia.nombre,
-            url_imagen: emojis[resInsignia.id_insignia] || "🏅" // 🚩 Mandamos el emoji aquí
-        };
-    }
-} catch (errInsignia) {
-    console.warn("⚠️ Error al asignar emoji de insignia:", errInsignia);
-}
+                insigniaInfo = {
+                    nombre: resInsignia.nombre,
+                    url_imagen: emojis[resInsignia.id_insignia] || "🏅" // 🚩 Mandamos el emoji aquí
+                };
+            }
+        } catch (errInsignia) {
+            console.warn("⚠️ Error al asignar emoji de insignia:", errInsignia);
+        }
 
         // 3. CONSULTAR ESTADO ACTUAL
         const usuario = await Usuario.findByPk(id_usuario, { transaction: t });
@@ -264,18 +277,20 @@ try {
             }
 
             if (ascendio) {
-                await db.query('UPDATE usuarios SET rango = ?, rango_actual = ? WHERE id_usuario = ?', 
+                await db.query('UPDATE usuarios SET rango = ?, rango_actual = ? WHERE id_usuario = ?',
                     { replacements: [nuevoRango, nuevoRango, id_usuario], transaction: t });
-                
-                await db.query('UPDATE diagnostico SET nivel_asignado = ? WHERE id_usuario = ? ORDER BY fecha_realizacion DESC LIMIT 1', 
+
+                await db.query('UPDATE diagnostico SET nivel_asignado = ? WHERE id_usuario = ? ORDER BY fecha_realizacion DESC LIMIT 1',
                     { replacements: [nuevoRango, id_usuario], transaction: t });
 
-                let idMedallaRango = 101; 
+                let idMedallaRango = 101;
                 if (nuevoRango.includes('Jonin')) idMedallaRango = 102;
                 if (nuevoRango.includes('Kage')) idMedallaRango = 103;
 
                 await db.query('INSERT IGNORE INTO usuarios_insignias (id_usuario, id_insignia, fecha_otorgada) VALUES (?, ?, NOW())',
                     { replacements: [id_usuario, idMedallaRango], transaction: t });
+
+                await crearNotificacion(id_usuario, mensajeAscenso, t);
             }
         }
 
@@ -376,6 +391,11 @@ exports.guardarDiagnostico = async (req, res) => {
         }, { transaction: t });
 
         await t.commit();
+        await crearNotificacion(
+            id_usuario,
+            `⛩️ El Oráculo ha hablado. Tu entrenamiento comienza con el rango de: ${rango}. ¡Revisa tu Malla Curricular!`
+        );
+
         res.status(201).json(nuevo);
 
     } catch (e) {
@@ -432,8 +452,22 @@ exports.obtenerDashboard = async (req, res) => {
 
                 if (diferenciaDias === 1) {
                     rachaActual += 1;
+
+                    // 🚩 NOTIFICACIONES DE HITOS DE RACHA
+                    if (rachaActual === 3) {
+                        crearNotificacion(id_usuario, "🔥 ¡3 días seguidos! Tu Voluntad de Fuego empieza a arder.");
+                    } else if (rachaActual === 7) {
+                        crearNotificacion(id_usuario, "🔥 ¡Una semana perfecta! Eres un ejemplo de disciplina ninja.");
+                    } else if (rachaActual === 30) {
+                        crearNotificacion(id_usuario, "👑 ¡30 DÍAS! Tu dominio del chakra matemático es legendario.");
+                    }
+
                 } else if (diferenciaDias > 1) {
-                    rachaActual = 1; // Perdió la racha, vuelve a empezar
+                    // Si pierde la racha y era mayor a 3, le mandamos un mensaje motivacional
+                    if (rachaActual >= 3) {
+                        crearNotificacion(id_usuario, "💨 Tu fuego ninja se ha apagado por inactividad. ¡Vuelve a encender la llama hoy!");
+                    }
+                    rachaActual = 1; // Pierde la racha
                 }
 
                 necesitaActualizar = true;
@@ -544,25 +578,25 @@ exports.actualizarProgreso = async (req, res) => {
 exports.obtenerBiblioteca = async (req, res) => {
     try {
         const id_usuario = extraerIdUsuario(req);
-        
+
         // 🚩 Buscamos el rango en la tabla 'usuarios', que es el rango en tiempo real
         const [usuario] = await db.query(
-            'SELECT rango_actual, rango FROM usuarios WHERE id_usuario = ?', 
+            'SELECT rango_actual, rango FROM usuarios WHERE id_usuario = ?',
             { replacements: [id_usuario], type: db.QueryTypes.SELECT }
         );
-        
+
         const nivel = usuario?.rango_actual || usuario?.rango || 'Genin (Iniciado)';
-        
+
         // 🚩 Base de conocimiento (Todos ven esto)
         let permitidos = ['Genin (Iniciado)', 'Bajo'];
-        
+
         // 🚩 Desbloqueos por rango (Usamos if independientes para acumular)
         if (nivel.includes('Chunin')) {
             permitidos.push('Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio');
-        } 
+        }
         if (nivel.includes('Jonin')) {
             permitidos.push('Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto');
-        } 
+        }
         if (nivel.includes('Kage') || nivel.includes('Leyenda')) {
             // El Kage hereda todos los conocimientos de la academia
             permitidos.push('Chunin (Guerrero)', 'Chunin (Intermedio)', 'Intermedio', 'Jonin (Maestro)', 'Jonin (Avanzado)', 'Alto', 'Kage (Leyenda)', 'Supremo');
@@ -572,14 +606,14 @@ exports.obtenerBiblioteca = async (req, res) => {
         permitidos = [...new Set(permitidos)];
 
         const pergaminos = await db.query(
-            "SELECT * FROM biblioteca_pergaminos WHERE nivel_requerido IN (?) ORDER BY id_pergamino DESC", 
+            "SELECT * FROM biblioteca_pergaminos WHERE nivel_requerido IN (?) ORDER BY id_pergamino DESC",
             { replacements: [permitidos], type: db.QueryTypes.SELECT }
         );
-        
+
         res.json(pergaminos);
-    } catch (e) { 
+    } catch (e) {
         console.error("Error en biblioteca:", e);
-        res.status(500).json({ mensaje: 'Error biblioteca' }); 
+        res.status(500).json({ mensaje: 'Error biblioteca' });
     }
 };
 
@@ -602,6 +636,26 @@ exports.obtenerRanking = async (req, res) => {
 
 // --- 💬 FORO Y PERFIL ---
 
+
+
+
+// Función Helper para crear notificaciones internamente en el backend
+exports.crearNotificacion = async (id_usuario, mensaje, transaction = null) => {
+    try {
+        await db.query(
+            'INSERT INTO notificaciones (id_usuario, mensaje, leida, fecha_creacion) VALUES (?, ?, 0, NOW())',
+            {
+                replacements: [id_usuario, mensaje],
+                transaction: transaction // Por si se llama dentro de otra transacción
+            }
+        );
+    } catch (error) {
+        console.error("Error al crear notificación ninja:", error);
+    }
+};
+
+
+
 exports.crearMisionForo = async (req, res) => {
     try {
         const { titulo, contenido } = req.body;
@@ -614,7 +668,8 @@ exports.crearMisionForo = async (req, res) => {
 
 exports.obtenerTemasForo = async (req, res) => {
     try {
-        const temas = await db.query(`SELECT p.*, u.nombre_completo AS autor FROM foro_posts p JOIN usuarios u ON p.id_usuario = u.id_usuario ORDER BY p.fecha_creacion DESC`, { type: db.QueryTypes.SELECT });
+        // 🚩 Agregamos u.foto_perfil AS autor_foto
+        const temas = await db.query(`SELECT p.*, u.nombre_completo AS autor, u.foto_perfil AS autor_foto FROM foro_posts p JOIN usuarios u ON p.id_usuario = u.id_usuario ORDER BY p.fecha_creacion DESC`, { type: db.QueryTypes.SELECT });
         res.json(temas);
     } catch (error) { res.status(500).json({ error: "Error temas" }); }
 };
@@ -623,14 +678,31 @@ exports.comentarMision = async (req, res) => {
     try {
         const { id_post, comentario } = req.body;
         const id_usuario = extraerIdUsuario(req);
-        await db.query("INSERT INTO foro_comentarios (id_post, id_usuario, comentario) VALUES (?, ?, ?)", { replacements: [id_post, id_usuario, comentario] });
+
+        // 1. Guardamos el comentario
+        await db.query("INSERT INTO foro_comentarios (id_post, id_usuario, comentario) VALUES (?, ?, ?)",
+            { replacements: [id_post, id_usuario, comentario] });
+
+        // 🚩 2. NOTIFICACIÓN: Buscamos de quién es el post original para avisarle
+        const [postOriginal] = await db.query("SELECT id_usuario FROM foro_posts WHERE id_post = ?",
+            { replacements: [id_post], type: db.QueryTypes.SELECT });
+
+        // Solo le notificamos si alguien MÁS comentó su post (no si él mismo se comentó)
+        if (postOriginal && postOriginal.id_usuario !== id_usuario) {
+            await crearNotificacion(
+                postOriginal.id_usuario,
+                "📜 Un ninja de la aldea ha respondido a tu pergamino en el foro."
+            );
+        }
+
         res.json({ mensaje: "Comentado" });
     } catch (error) { res.status(500).json({ error: "Error comentario" }); }
 };
 
 exports.obtenerComentarios = async (req, res) => {
     try {
-        const comentarios = await db.query(`SELECT c.*, u.nombre_completo AS autor FROM foro_comentarios c JOIN usuarios u ON c.id_usuario = u.id_usuario WHERE c.id_post = ? ORDER BY c.fecha_comentario ASC`, { replacements: [req.params.id_post], type: db.QueryTypes.SELECT });
+        // 🚩 Agregamos u.foto_perfil AS autor_foto
+        const comentarios = await db.query(`SELECT c.*, u.nombre_completo AS autor, u.foto_perfil AS autor_foto FROM foro_comentarios c JOIN usuarios u ON c.id_usuario = u.id_usuario WHERE c.id_post = ? ORDER BY c.fecha_comentario ASC`, { replacements: [req.params.id_post], type: db.QueryTypes.SELECT });
         res.json(comentarios);
     } catch (error) { res.status(500).json({ error: "Error respuestas" }); }
 };

@@ -19,6 +19,7 @@ router.get('/sugerencia-ia', verificarToken, estudianteController.obtenerSugeren
 // 👤 Perfil y Notificaciones
 router.get('/perfil/datos', verificarToken, estudianteController.obtenerPerfil);
 router.get('/notificaciones', verificarToken, estudianteController.obtenerNotificaciones);
+router.put('/notificaciones/:id/leer', verificarToken, estudianteController.marcarNotificacionLeida);
 
 // 💬 Foro
 router.get('/foro/temas', verificarToken, estudianteController.obtenerTemasForo);

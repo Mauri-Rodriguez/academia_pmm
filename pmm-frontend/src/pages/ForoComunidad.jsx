@@ -208,7 +208,7 @@ const ForoComunidad = () => {
                             <p className="animate-pulse text-shinobi-gold font-scholar text-xs uppercase">Sincronizando Muro...</p>
                         </div>
                     ) : posts.map((post) => {
-                        const tieneFoto = post.autor_foto != null;
+                        const tieneFoto = post.autor_foto != null && post.autor_foto !== '';
                         const esMio = Number(post.id_usuario) === Number(usuarioActualId);
 
                         return (
@@ -330,7 +330,7 @@ const ForoComunidad = () => {
                             <div className="space-y-4">
                                 {comentarios.map((c) => {
                                     // 1. Verificamos si el autor del comentario tiene foto en la base de datos
-                                    const tieneFotoComentario = c.autor_foto != null;
+                                    const tieneFotoComentario = c.autor_foto != null && c.autor_foto !== '';
 
                                     // 2. Mantenemos esto para saber si mostramos los botones de Editar/Borrar
                                     const esMiComentario = Number(c.id_usuario) === Number(usuarioActualId);

@@ -2,11 +2,11 @@ import api, { BACKEND_URL } from '../api/api';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-
+import CampanaNotificaciones from '../components/CampanaNotificaciones';
 const DashboardEstudiante = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    
+
     const [datos, setDatos] = useState(null);
     const [loading, setLoading] = useState(true);
     const [loadingIA, setLoadingIA] = useState(true);
@@ -54,7 +54,7 @@ const DashboardEstudiante = () => {
             if (err.response?.status === 403) {
                 navigate('/estudiante/diagnostico');
             } else {
-                navigate('/'); 
+                navigate('/');
             }
             setLoading(false);
         }
@@ -104,7 +104,7 @@ const DashboardEstudiante = () => {
 
     const cerrarOnboarding = () => {
         setOnboardingActive(false);
-        window.history.replaceState({}, document.title); 
+        window.history.replaceState({}, document.title);
     };
 
     if (loading) return (
@@ -121,8 +121,8 @@ const DashboardEstudiante = () => {
 
     const efectividadInicial = Math.round((puntajeIA / 13) * 100);
     const efectividadActual = Math.round((misionesCompletas / totalMisiones) * 100);
-    const heightInicial = Math.max(efectividadInicial, 2); 
-    const heightActual = Math.max(efectividadActual, 2);   
+    const heightInicial = Math.max(efectividadInicial, 2);
+    const heightActual = Math.max(efectividadActual, 2);
 
     const rutaUnica = datos?.ruta_ia_asignada?.filter((modulo, index, self) =>
         index === self.findIndex((m) => m.id_modulo === modulo.id_modulo)
@@ -143,9 +143,9 @@ const DashboardEstudiante = () => {
             <AnimatePresence>
                 {onboardingActivo && datos && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">
-                        <motion.div 
-                            initial={{ opacity: 0, scale: 0.9 }} 
-                            animate={{ opacity: 1, scale: 1 }} 
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
                             className="bg-[#0E121C] border border-shinobi-gold/30 rounded-[2.5rem] p-8 max-w-md w-full text-center shadow-[0_0_50px_rgba(197,160,89,0.1)] relative overflow-hidden"
                         >
@@ -154,11 +154,11 @@ const DashboardEstudiante = () => {
                                     <div className="w-20 h-20 bg-shinobi-gold/10 rounded-full mx-auto flex items-center justify-center border border-shinobi-gold/30">
                                         <span className="text-4xl">⛩️</span>
                                     </div>
-                                    <h2 className="text-2xl font-scholar text-white uppercase italic">Bienvenido al <br/><span className="text-shinobi-gold">Panel Académico</span></h2>
+                                    <h2 className="text-2xl font-scholar text-white uppercase italic">Bienvenido al <br /><span className="text-shinobi-gold">Panel Académico</span></h2>
                                     <p className="text-sm text-slate-400 leading-relaxed font-modern">
                                         Este es tu centro de mando. Aquí encontrarás tu <strong>Malla Curricular</strong> adaptada por nuestra IA según tus resultados, estadísticas de tu evolución y recomendaciones en tiempo real para mejorar tus puntos débiles.
                                     </p>
-                                    <button 
+                                    <button
                                         onClick={avanzarOnboarding}
                                         className="w-full bg-shinobi-gold text-black py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white transition-all shadow-lg mt-4"
                                     >
@@ -169,8 +169,8 @@ const DashboardEstudiante = () => {
                                 <div className="space-y-6">
                                     <div className="absolute top-0 left-0 w-full h-full bg-shinobi-gold/5 blur-3xl -z-10 animate-pulse"></div>
                                     <span className="text-[10px] text-shinobi-gold uppercase tracking-[0.3em] font-bold block mb-2">Convalidación de Conocimiento</span>
-                                    
-                                    <motion.div 
+
+                                    <motion.div
                                         key={pasoOnboarding}
                                         initial={{ rotateY: 90, opacity: 0 }}
                                         animate={{ rotateY: 0, opacity: 1 }}
@@ -179,7 +179,7 @@ const DashboardEstudiante = () => {
                                     >
                                         <span className="text-5xl">🏅</span>
                                     </motion.div>
-                                    
+
                                     <h2 className="text-xl font-bold text-white uppercase mt-6">
                                         {/* Extraemos el nombre y descripción directamente de la DB */}
                                         {insigniasHeredadasDetalle[pasoOnboarding - 1]?.nombre_insignia}
@@ -187,8 +187,8 @@ const DashboardEstudiante = () => {
                                     <p className="text-xs text-slate-400 italic px-4 min-h-[40px]">
                                         "{insigniasHeredadasDetalle[pasoOnboarding - 1]?.descripcion}"
                                     </p>
-                                    
-                                    <button 
+
+                                    <button
                                         onClick={avanzarOnboarding}
                                         className="w-full bg-transparent border-2 border-shinobi-gold text-shinobi-gold py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-shinobi-gold hover:text-black transition-all mt-6"
                                     >
@@ -226,7 +226,7 @@ const DashboardEstudiante = () => {
                         ${configGlobal.border} ${isExpanded ? 'w-16 h-16 rotate-[360deg]' : 'w-12 h-12'}`}
                     >
                         {fotoPerfil ? (
-                          <img src={obtenerUrlImagen(fotoPerfil)} alt="Avatar" className="w-full h-full object-cover" />
+                            <img src={obtenerUrlImagen(fotoPerfil)} alt="Avatar" className="w-full h-full object-cover" />
                         ) : (
                             <span className={`font-scholar transition-all font-bold ${isExpanded ? 'text-2xl' : 'text-lg'} ${configGlobal.color}`}>
                                 {nombreUsuario.charAt(0).toUpperCase()}
@@ -290,6 +290,11 @@ const DashboardEstudiante = () => {
                     <h1 className="text-3xl md:text-5xl lg:text-6xl font-scholar text-white tracking-tighter uppercase leading-tight pr-16 md:pr-0">
                         PROGRESO DE <span className={`${configGlobal.color} block md:inline mt-1 md:mt-0`}>{nombreUsuario}</span>
                     </h1>
+
+                    <div className="hidden md:block">
+                        <CampanaNotificaciones />
+                    </div>
+
                 </header>
 
                 {/* 🚩 SECCIÓN 1: SUGERENCIA IA */}
@@ -510,7 +515,7 @@ const DashboardEstudiante = () => {
                     <h3 className="font-scholar text-xs md:text-sm text-white/80 uppercase tracking-[0.2em] md:tracking-[0.3em]">Malla Curricular</h3>
                     <div className="h-px flex-1 mx-4 md:mx-8 bg-gradient-to-r from-white/10 to-transparent"></div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
                     {rutaUnica.map((modulo, index) => {
                         const estiloModulo = getEstiloNivel(modulo.nivel);
