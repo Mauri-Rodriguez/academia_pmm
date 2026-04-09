@@ -32,18 +32,28 @@ const extraerIdUsuario = (req) => {
 // Función Helper para crear notificaciones internamente en el backend
 const crearNotificacion = async (id_usuario, mensaje, transaction = null) => {
     try {
+        // Preparamos las opciones básicas
+        const opciones = {
+            replacements: [id_usuario, mensaje]
+        };
+        
+        // Solo inyectamos la transacción si realmente existe una activa
+        if (transaction) {
+            opciones.transaction = transaction;
+        }
+
         await db.query(
             'INSERT INTO notificaciones (id_usuario, mensaje, leida, fecha_creacion) VALUES (?, ?, 0, NOW())',
-            {
-                replacements: [id_usuario, mensaje],
-                transaction: transaction // Por si se llama dentro de otra transacción
-            }
+            opciones
         );
+        
+        // 🚩 Esto imprimirá un mensaje verde en tu terminal de Railway/VSCode para que sepas que funcionó
+        console.log(`🔔 [NOTIFICACIÓN CREADA] Usuario ${id_usuario}: "${mensaje}"`);
+        
     } catch (error) {
-        console.error("Error al crear notificación ninja:", error);
+        console.error("❌ [ERROR NOTIFICACIÓN]:", error.message);
     }
 };
-
 
 
 // --- ⚡ GESTIÓN DE ERRORES CON GEMINI 2.50 FLASH-LITE (100% TIEMPO REAL) ---
@@ -757,11 +767,16 @@ exports.obtenerPerfil = async (req, res) => {
 
 exports.obtenerNotificaciones = async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM notificaciones WHERE id_usuario = ? ORDER BY fecha_creacion DESC LIMIT 15', { replacements: [extraerIdUsuario(req)], type: db.QueryTypes.SELECT });
-        res.json(rows || []);
-    } catch (error) { res.status(500).send("Error notif"); }
+        const rows = await db.query(
+            'SELECT * FROM notificaciones WHERE id_usuario = ? ORDER BY fecha_creacion DESC LIMIT 15', 
+            { replacements: [extraerIdUsuario(req)], type: db.QueryTypes.SELECT }
+        );
+        res.json(rows); // Ahora sí envía la lista completa []
+    } catch (error) { 
+        console.error("Error al obtener notificaciones:", error);
+        res.json([]); // Si hay error, envía lista vacía para no romper React
+    }
 };
-
 exports.marcarNotificacionLeida = async (req, res) => {
     try {
         await db.query('UPDATE notificaciones SET leida = 1 WHERE id_notificacion = ?', { replacements: [req.params.id] });

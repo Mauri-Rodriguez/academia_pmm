@@ -10,13 +10,14 @@ const CampanaNotificaciones = () => {
     const menuRef = useRef(null);
 
     // 1. Cargar las notificaciones al inicio
-    const cargarNotificaciones = async () => {
+const cargarNotificaciones = async () => {
         try {
-            // Asegúrate de que esta ruta coincida con tu estudianteRoutes.js
             const res = await api.get('/api/estudiante/notificaciones');
-            setNotificaciones(res.data);
+            // 🛡️ ESCUDO: Si por alguna razón el backend no manda un array, forzamos uno vacío []
+            setNotificaciones(Array.isArray(res.data) ? res.data : []);
         } catch (error) {
             console.error("Error al cargar mensajes del cuervo:", error);
+            setNotificaciones([]); // Previene el error fatal
         }
     };
 
