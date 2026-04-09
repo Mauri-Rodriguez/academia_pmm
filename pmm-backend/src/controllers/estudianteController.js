@@ -29,28 +29,47 @@ const extraerIdUsuario = (req) => {
     } catch (err) { return null; }
 };
 
-// Función Helper para crear notificaciones internamente en el backend
+// Función Helper para crear notificaciones con manejo de zona horaria y transacciones
 const crearNotificacion = async (id_usuario, mensaje, ruta = null, transaction = null) => {
     try {
-        // Ahora le pasamos la ruta en los reemplazos
-        const opciones = {
-            replacements: [id_usuario, mensaje, ruta, sqlDateTime] 
+        // 1. Calculamos la hora de Colombia (UTC-5)
+        const fechaActual = new Date();
+        const offsetBogota = -5 * 60 * 60 * 1000; 
+        const localBogota = new Date(fechaActual.getTime() + offsetBogota);
+        const sqlDateTime = localBogota.toISOString().slice(0, 19).replace('T', ' '); 
+
+        // 2. Preparamos el objeto de configuración
+        const configuracion = {
+            replacements: [id_usuario, mensaje, ruta, sqlDateTime]
         };
         
+        // 3. Si hay una transacción activa, la añadimos
         if (transaction) {
-            opciones.transaction = transaction;
+            configuracion.transaction = transaction;
         }
 
-        // Agregamos la columna 'ruta' al INSERT
+        // 4. Ejecutamos la consulta SQL
         await db.query(
             'INSERT INTO notificaciones (id_usuario, mensaje, ruta, leida, fecha_creacion) VALUES (?, ?, ?, 0, ?)',
-            opciones
+            configuracion
         );
         
-        console.log(`🔔 [NOTIFICACIÓN CREADA] Usuario ${id_usuario}: "${mensaje}" (Ruta: ${ruta || 'Ninguna'})`);
-        
+        console.log(`🔔 [NOTIFICACIÓN OK] Usuario ${id_usuario}: "${mensaje}"`);
+
     } catch (error) {
+        // Si sale un error aquí, es probable que no hayas creado la columna 'ruta' en la DB
         console.error("❌ [ERROR NOTIFICACIÓN]:", error.message);
+        
+        // Intento de rescate: Guardar lo básico si falla lo anterior
+        try {
+            await db.query(
+                'INSERT INTO notificaciones (id_usuario, mensaje, leida, fecha_creacion) VALUES (?, ?, 0, NOW())',
+                { replacements: [id_usuario, mensaje], transaction }
+            );
+            console.log("⚠️ Notificación guardada sin ruta (posible columna faltante en DB)");
+        } catch (e2) {
+            console.error("❌ Falla crítica en el sistema de notificaciones");
+        }
     }
 };
 
