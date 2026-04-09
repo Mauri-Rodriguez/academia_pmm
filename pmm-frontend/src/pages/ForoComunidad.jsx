@@ -5,12 +5,12 @@ import api, { BACKEND_URL } from '../api/api';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 
-const location = useLocation();
+
 const ForoComunidad = () => {
     const navigate = useNavigate();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
-
+    const location = useLocation();
     // Estados para MODAL DE CREACIÓN
     const [mostrarModal, setMostrarModal] = useState(false);
     const [nuevaMision, setNuevaMision] = useState({ titulo: '', contenido: '' });
