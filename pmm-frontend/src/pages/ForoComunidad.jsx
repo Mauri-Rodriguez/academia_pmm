@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // 🚩 NUEVO: Importamos BACKEND_URL para arreglar las fotos
 import api, { BACKEND_URL } from '../api/api';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+
 
 const location = useLocation();
 const ForoComunidad = () => {

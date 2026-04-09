@@ -34,15 +34,15 @@ const crearNotificacion = async (id_usuario, mensaje, ruta = null, transaction =
     try {
         // 1. Calculamos la hora de Colombia (UTC-5)
         const fechaActual = new Date();
-        const offsetBogota = -5 * 60 * 60 * 1000; 
+        const offsetBogota = -5 * 60 * 60 * 1000;
         const localBogota = new Date(fechaActual.getTime() + offsetBogota);
-        const sqlDateTime = localBogota.toISOString().slice(0, 19).replace('T', ' '); 
+        const sqlDateTime = localBogota.toISOString().slice(0, 19).replace('T', ' ');
 
         // 2. Preparamos el objeto de configuración
         const configuracion = {
             replacements: [id_usuario, mensaje, ruta, sqlDateTime]
         };
-        
+
         // 3. Si hay una transacción activa, la añadimos
         if (transaction) {
             configuracion.transaction = transaction;
@@ -53,13 +53,13 @@ const crearNotificacion = async (id_usuario, mensaje, ruta = null, transaction =
             'INSERT INTO notificaciones (id_usuario, mensaje, ruta, leida, fecha_creacion) VALUES (?, ?, ?, 0, ?)',
             configuracion
         );
-        
+
         console.log(`🔔 [NOTIFICACIÓN OK] Usuario ${id_usuario}: "${mensaje}"`);
 
     } catch (error) {
         // Si sale un error aquí, es probable que no hayas creado la columna 'ruta' en la DB
         console.error("❌ [ERROR NOTIFICACIÓN]:", error.message);
-        
+
         // Intento de rescate: Guardar lo básico si falla lo anterior
         try {
             await db.query(
@@ -127,13 +127,13 @@ exports.registrarFallo = async (req, res) => {
 
         const [fallosHoy] = await db.query(`
             SELECT COUNT(*) as total FROM historial_errores 
-            WHERE id_usuario = ? AND DATE(fecha_error) = CURDATE()`, 
+            WHERE id_usuario = ? AND DATE(fecha_error) = CURDATE()`,
             { replacements: [id_usuario], type: db.QueryTypes.SELECT }
         );
 
         if (fallosHoy && fallosHoy.total === 5) {
             await crearNotificacion(
-                id_usuario, 
+                id_usuario,
                 "⚠️ El Oráculo nota turbulencia en tu chakra. Tómate un respiro, revisa la biblioteca y vuelve a intentarlo."
             );
         }
@@ -710,25 +710,25 @@ exports.comentarMision = async (req, res) => {
         if (!id_usuario) {
             return res.status(401).json({ error: "Sesión inválida o expirada" });
         }
-        
+
         // 💬 2. Guardamos el comentario (Esto es lo principal)
-        await db.query("INSERT INTO foro_comentarios (id_post, id_usuario, comentario) VALUES (?, ?, ?)", 
+        await db.query("INSERT INTO foro_comentarios (id_post, id_usuario, comentario) VALUES (?, ?, ?)",
             { replacements: [id_post, id_usuario, comentario] });
 
         // 🔔 3. Sistema de Notificaciones (AISLADO en su propio try-catch)
         try {
-            const postOriginalArray = await db.query("SELECT id_usuario FROM foro_posts WHERE id_post = ?", 
+            const postOriginalArray = await db.query("SELECT id_usuario FROM foro_posts WHERE id_post = ?",
                 { replacements: [id_post], type: db.QueryTypes.SELECT });
-                
+
             const postOriginal = postOriginalArray[0];
-                
+
             // Solo le notificamos si alguien MÁS comentó su post
             if (postOriginal && Number(postOriginal.id_usuario) !== Number(id_usuario)) {
                 // 🚩 Usamos el Helper blindado que ya calcula la hora de Colombia y acepta la ruta
                 await crearNotificacion(
-                    postOriginal.id_usuario, 
+                    postOriginal.id_usuario,
                     "📜 Un ninja de la aldea ha respondido a tu pergamino en el foro.",
-                    "/estudiante/foro" // 👈 ¡La ruta que hará que la notificación te lleve al foro!
+                    `/estudiante/foro?open=${id_post}`// 
                 );
             }
         } catch (notifError) {
@@ -740,9 +740,9 @@ exports.comentarMision = async (req, res) => {
         // ✅ 4. Respuesta exitosa al frontend
         res.json({ mensaje: "Comentado" });
 
-    } catch (error) { 
+    } catch (error) {
         console.error("❌ Error GRAVE al comentar en el foro:", error);
-        res.status(500).json({ error: "Falla en el servidor al guardar el comentario" }); 
+        res.status(500).json({ error: "Falla en el servidor al guardar el comentario" });
     }
 };
 exports.obtenerComentarios = async (req, res) => {
@@ -786,11 +786,11 @@ exports.obtenerPerfil = async (req, res) => {
 exports.obtenerNotificaciones = async (req, res) => {
     try {
         const rows = await db.query(
-            'SELECT * FROM notificaciones WHERE id_usuario = ? ORDER BY fecha_creacion DESC LIMIT 15', 
+            'SELECT * FROM notificaciones WHERE id_usuario = ? ORDER BY fecha_creacion DESC LIMIT 15',
             { replacements: [extraerIdUsuario(req)], type: db.QueryTypes.SELECT }
         );
-        res.json(rows); // Ahora sí envía la lista completa []
-    } catch (error) { 
+        res.json(rows); 
+    } catch (error) {
         console.error("Error al obtener notificaciones:", error);
         res.json([]); // Si hay error, envía lista vacía para no romper React
     }
