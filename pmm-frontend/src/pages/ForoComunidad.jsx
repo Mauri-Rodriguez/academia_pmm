@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 // 🚩 NUEVO: Importamos BACKEND_URL para arreglar las fotos
 import api, { BACKEND_URL } from '../api/api';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 
+const location = useLocation();
 const ForoComunidad = () => {
     const navigate = useNavigate();
     const [posts, setPosts] = useState([]);
@@ -52,7 +54,8 @@ const ForoComunidad = () => {
         return colores[indice];
     };
 
-    useEffect(() => {
+useEffect(() => {
+        // 1. Lógica existente del Token
         const token = localStorage.getItem('token');
         if (token) {
             try {
@@ -61,8 +64,30 @@ const ForoComunidad = () => {
                 setUsuarioActualId(Number(id));
             } catch (e) { console.error("Error de sesión"); }
         }
+
+        // 2. Cargar los posts del servidor
         cargarForo();
-    }, []);
+    }, []); // Este se mantiene solo al montar para no repetir llamadas a la API
+
+    // 🚩 NUEVO: useEffect dedicado a detectar el parámetro de la notificación
+    // Se ejecutará cada vez que la lista de "posts" cambie (cuando lleguen de la API)
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const postIdParaAbrir = params.get('open');
+
+        if (postIdParaAbrir && posts.length > 0) {
+            // Buscamos el post específico en la lista que acaba de cargar
+            const postEncontrado = posts.find(p => Number(p.id_post) === Number(postIdParaAbrir));
+            
+            if (postEncontrado) {
+                setMisionSeleccionada(postEncontrado);
+                
+                // Limpiamos la URL para que si el usuario refresca la página, 
+                // no se le abra el modal automáticamente otra vez.
+                window.history.replaceState({}, document.title, "/estudiante/foro");
+            }
+        }
+    }, [posts, location.search]); // 👈 Escucha cuando llegan los posts o cambia la URL
 
     const cargarForo = async () => {
         try {
