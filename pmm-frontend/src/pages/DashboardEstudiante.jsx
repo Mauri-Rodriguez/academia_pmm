@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import CampanaNotificaciones from '../components/CampanaNotificaciones';
+
 const DashboardEstudiante = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -274,25 +275,35 @@ const DashboardEstudiante = () => {
             <main className="flex-1 p-5 md:p-10 lg:p-16 overflow-y-auto relative pb-28 md:pb-16">
                 <div className="absolute top-0 right-0 w-full md:w-1/2 h-1/2 bg-shinobi-gold/5 blur-[80px] md:blur-[120px] rounded-full -z-10"></div>
 
-                <header className="mb-8 md:mb-12 animate-in fade-in slide-in-from-top-4 duration-1000 relative">
-                    <button
-                        onClick={() => { localStorage.clear(); navigate('/'); }}
-                        className="md:hidden absolute top-0 right-0 text-rose-500/60 hover:text-rose-500 flex flex-col items-center transition-all active:scale-95 bg-rose-500/5 p-2 rounded-xl border border-rose-500/10 z-10"
-                    >
-                        <span className="text-xl leading-none">🚪</span>
-                        <span className="text-[7px] font-scholar uppercase tracking-widest mt-1 font-bold">Salir</span>
-                    </button>
-
-                    <div className="flex items-center gap-3 md:gap-4 mb-2 pr-16 md:pr-0">
-                        <div className={`h-[2px] w-8 md:w-12 ${configGlobal.bar}`}></div>
-                        <span className="text-shinobi-gold font-scholar text-[10px] md:text-xs tracking-[0.2em] md:tracking-[0.4em] uppercase opacity-50">Nivel Académico: {datos?.estadisticas?.rango_actual}</span>
+                {/* 🚀 HEADER TOTALMENTE RESPONSIVE */}
+                <header className="mb-8 md:mb-12 animate-in fade-in slide-in-from-top-4 duration-1000 relative flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+                    
+                    {/* Contenedor Izquierdo: Textos (Con padding-right en móvil para no pisar botones) */}
+                    <div className="pr-24 md:pr-0">
+                        <div className="flex items-center gap-3 md:gap-4 mb-2">
+                            <div className={`h-[2px] w-8 md:w-12 ${configGlobal.bar}`}></div>
+                            <span className="text-shinobi-gold font-scholar text-[10px] md:text-xs tracking-[0.2em] md:tracking-[0.4em] uppercase opacity-50 truncate">Nivel Académico: {datos?.estadisticas?.rango_actual}</span>
+                        </div>
+                        <h1 className="text-3xl md:text-5xl lg:text-6xl font-scholar text-white tracking-tighter uppercase leading-tight">
+                            PROGRESO DE <span className={`${configGlobal.color} block md:inline mt-1 md:mt-0`}>{nombreUsuario}</span>
+                        </h1>
                     </div>
-                    <h1 className="text-3xl md:text-5xl lg:text-6xl font-scholar text-white tracking-tighter uppercase leading-tight pr-16 md:pr-0">
-                        PROGRESO DE <span className={`${configGlobal.color} block md:inline mt-1 md:mt-0`}>{nombreUsuario}</span>
-                    </h1>
 
-                    <div className="hidden md:block">
-                        <CampanaNotificaciones />
+                    {/* Contenedor Derecho: Acciones de Usuario flotantes en móvil */}
+                    <div className="absolute top-0 right-0 md:relative flex items-center gap-2 md:gap-4 z-50">
+                        {/* La Campana ya no se oculta en móvil */}
+                        <div className="bg-[#0E121C]/80 backdrop-blur-md rounded-full border border-white/10 shadow-lg">
+                            <CampanaNotificaciones />
+                        </div>
+                        
+                        {/* Botón salir exclusivo para móvil */}
+                        <button
+                            onClick={() => { localStorage.clear(); navigate('/'); }}
+                            className="md:hidden flex flex-col items-center justify-center text-rose-500/60 hover:text-rose-500 transition-all active:scale-95 bg-rose-500/5 w-10 h-10 rounded-xl border border-rose-500/10"
+                            title="Salir"
+                        >
+                            <span className="text-xl leading-none">🚪</span>
+                        </button>
                     </div>
 
                 </header>

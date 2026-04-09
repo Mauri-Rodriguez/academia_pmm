@@ -302,10 +302,10 @@ const ForoComunidad = () => {
                         <div className="p-5 border-b border-white/5 bg-black/20 flex items-center gap-4">
                             <div
                                 className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold overflow-hidden"
-                                style={{ backgroundColor: !(Number(misionSeleccionada.id_usuario) === Number(usuarioActualId) && fotoUsuarioActual) ? generarColorAvatar(misionSeleccionada.autor) : 'transparent' }}
+                                style={{ backgroundColor: !misionSeleccionada.autor_foto ? generarColorAvatar(misionSeleccionada.autor) : 'transparent' }}
                             >
-                                {Number(misionSeleccionada.id_usuario) === Number(usuarioActualId) && fotoUsuarioActual ? (
-                                    <img src={obtenerUrlImagen(fotoUsuarioActual)} alt={misionSeleccionada.autor} className="w-full h-full object-cover" />
+                                {misionSeleccionada.autor_foto ? (
+                                    <img src={obtenerUrlImagen(misionSeleccionada.autor_foto)} alt={misionSeleccionada.autor} className="w-full h-full object-cover" />
                                 ) : (
                                     misionSeleccionada.autor?.charAt(0).toUpperCase() || "N"
                                 )}

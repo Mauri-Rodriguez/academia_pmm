@@ -29,6 +29,23 @@ const extraerIdUsuario = (req) => {
     } catch (err) { return null; }
 };
 
+// Función Helper para crear notificaciones internamente en el backend
+const crearNotificacion = async (id_usuario, mensaje, transaction = null) => {
+    try {
+        await db.query(
+            'INSERT INTO notificaciones (id_usuario, mensaje, leida, fecha_creacion) VALUES (?, ?, 0, NOW())',
+            {
+                replacements: [id_usuario, mensaje],
+                transaction: transaction // Por si se llama dentro de otra transacción
+            }
+        );
+    } catch (error) {
+        console.error("Error al crear notificación ninja:", error);
+    }
+};
+
+
+
 // --- ⚡ GESTIÓN DE ERRORES CON GEMINI 2.50 FLASH-LITE (100% TIEMPO REAL) ---
 
 exports.registrarFallo = async (req, res) => {
@@ -638,24 +655,6 @@ exports.obtenerRanking = async (req, res) => {
 
 
 
-
-// Función Helper para crear notificaciones internamente en el backend
-exports.crearNotificacion = async (id_usuario, mensaje, transaction = null) => {
-    try {
-        await db.query(
-            'INSERT INTO notificaciones (id_usuario, mensaje, leida, fecha_creacion) VALUES (?, ?, 0, NOW())',
-            {
-                replacements: [id_usuario, mensaje],
-                transaction: transaction // Por si se llama dentro de otra transacción
-            }
-        );
-    } catch (error) {
-        console.error("Error al crear notificación ninja:", error);
-    }
-};
-
-
-
 exports.crearMisionForo = async (req, res) => {
     try {
         const { titulo, contenido } = req.body;
@@ -679,24 +678,43 @@ exports.comentarMision = async (req, res) => {
         const { id_post, comentario } = req.body;
         const id_usuario = extraerIdUsuario(req);
 
-        // 1. Guardamos el comentario
-        await db.query("INSERT INTO foro_comentarios (id_post, id_usuario, comentario) VALUES (?, ?, ?)",
+        // 🛡️ 1. Verificación de seguridad
+        if (!id_usuario) {
+            return res.status(401).json({ error: "Sesión inválida o expirada" });
+        }
+        
+        // 💬 2. Guardamos el comentario (Esto es lo principal)
+        await db.query("INSERT INTO foro_comentarios (id_post, id_usuario, comentario) VALUES (?, ?, ?)", 
             { replacements: [id_post, id_usuario, comentario] });
 
-        // 🚩 2. NOTIFICACIÓN: Buscamos de quién es el post original para avisarle
-        const [postOriginal] = await db.query("SELECT id_usuario FROM foro_posts WHERE id_post = ?",
-            { replacements: [id_post], type: db.QueryTypes.SELECT });
-
-        // Solo le notificamos si alguien MÁS comentó su post (no si él mismo se comentó)
-        if (postOriginal && postOriginal.id_usuario !== id_usuario) {
-            await crearNotificacion(
-                postOriginal.id_usuario,
-                "📜 Un ninja de la aldea ha respondido a tu pergamino en el foro."
-            );
+        // 🔔 3. Sistema de Notificaciones (AISLADO en su propio try-catch)
+        try {
+            const postOriginalArray = await db.query("SELECT id_usuario FROM foro_posts WHERE id_post = ?", 
+                { replacements: [id_post], type: db.QueryTypes.SELECT });
+                
+            const postOriginal = postOriginalArray[0];
+                
+            // Solo le notificamos si alguien MÁS comentó su post
+            if (postOriginal && Number(postOriginal.id_usuario) !== Number(id_usuario)) {
+                // Hacemos la inserción directa por si helper da algun problemas
+                await db.query(
+                    'INSERT INTO notificaciones (id_usuario, mensaje, leida, fecha_creacion) VALUES (?, ?, 0, NOW())',
+                    { replacements: [postOriginal.id_usuario, "📜 Un ninja de la aldea ha respondido a tu pergamino en el foro."] }
+                );
+            }
+        } catch (notifError) {
+            // Si la notificación falla el servidor solo lo anota en consola
+            // pero NO le lanza error 500 al usuario. El comentario se publica igual.
+            console.error("⚠️ Error silencioso al enviar notificación:", notifError.message);
         }
 
+        // ✅ 4. Respuesta exitosa al frontend
         res.json({ mensaje: "Comentado" });
-    } catch (error) { res.status(500).json({ error: "Error comentario" }); }
+
+    } catch (error) { 
+        console.error("❌ Error GRAVE al comentar en el foro:", error);
+        res.status(500).json({ error: "Falla en el servidor al guardar el comentario" }); 
+    }
 };
 
 exports.obtenerComentarios = async (req, res) => {
