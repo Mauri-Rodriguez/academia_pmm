@@ -96,7 +96,7 @@ exports.finalizarModuloYEvaluarAscenso = async (req, res) => {
         // 🚩 NUEVO: RECOMPENSA INMEDIATA (Insignia del Módulo)
         // Se asume que existe una insignia con el mismo ID del módulo o vinculada
         await sequelize.query(
-            'INSERT IGNORE INTO Usuarios_Insignias (id_usuario, id_insignia, fecha_otorgada) VALUES (?, ?, NOW())',
+            'INSERT IGNORE INTO usuarios_insignias (id_usuario, id_insignia, fecha_otorgada) VALUES (?, ?, NOW())',
             { replacements: [id_usuario, id_modulo], transaction: t }
         );
 
@@ -148,7 +148,7 @@ exports.finalizarModuloYEvaluarAscenso = async (req, res) => {
 
             // Insertar Insignia de Rango
             await sequelize.query(
-                'INSERT IGNORE INTO Usuarios_Insignias (id_usuario, id_insignia, fecha_otorgada) VALUES (?, ?, NOW())',
+                'INSERT IGNORE INTO usuarios_insignias (id_usuario, id_insignia, fecha_otorgada) VALUES (?, ?, NOW())',
                 { replacements: [id_usuario, configSiguiente.insigniaRangoId], transaction: t }
             );
 

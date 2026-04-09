@@ -39,13 +39,16 @@ const PerfilEstudiante = () => {
                 const misionesCompletas = dashStats.modulos_completados || 0;
 
                 setDatos({
-                    nombre_completo: resUser.data?.nombre_completo || localStorage.getItem('user_name'),
-                    correo: resUser.data?.correo || localStorage.getItem('user_email'),
+                    nombre_completo: resUser.data?.nombre_completo || resUser.data?.nombre || localStorage.getItem('user_name') || 'Estudiante',
+                    correo: resUser.data?.correo || resUser.data?.email || localStorage.getItem('user_email') || 'correo@academia.edu',
                     rango_actual: dashStats.rango_actual || 'Genin (Iniciado)',
                     puntaje_total: puntajeIA,
                     ejercicios_completados: misionesCompletas,
                     efectividad: efectividadReal,
-                    racha_dias: dashStats.racha_dias || 0
+                    racha_dias: dashStats.racha_dias || 0,
+                    // 🚩 AQUÍ EXTRAEMOS LAS INSIGNIAS REALES DE LA BASE DE DATOS
+                    insignias_obtenidas: resDash.data?.insignias_obtenidas || [],
+                    todas_insignias: resDash.data?.todas_insignias || []
                 });
 
                 if (resUser.data?.foto_perfil) {
@@ -84,38 +87,11 @@ const PerfilEstudiante = () => {
         }
     };
 
-    if (loading) return (
+    if (loading || !datos) return (
         <div className="min-h-screen bg-[#05070A] flex items-center justify-center">
             <div className="w-12 h-12 border-4 border-shinobi-gold border-t-transparent rounded-full animate-spin"></div>
         </div>
     );
-
-    const nombre = datos?.nombre_completo || 'Estudiante';
-    const email = datos?.correo || 'correo@academia.edu';
-
-    // 🚩 LÓGICA DE HITOS GAMIFICADOS
-    const hitos = [
-        { 
-            id: 1, titulo: 'Primera Sangre', 
-            desc: 'Completaste tu primer módulo.', 
-            icono: '🎯', logrado: datos.ejercicios_completados > 0 
-        },
-        { 
-            id: 2, titulo: 'Precisión Letal', 
-            desc: 'Alcanzaste 80% o más de efectividad.', 
-            icono: '⚡', logrado: datos.efectividad >= 80 
-        },
-        { 
-            id: 3, titulo: 'Voluntad de Fuego', 
-            desc: 'Mantuvo una racha de más de 3 días.', 
-            icono: '🔥', logrado: datos.racha_dias >= 3 
-        },
-        { 
-            id: 4, titulo: 'Ascenso de Rango', 
-            desc: 'Superaste el nivel básico.', 
-            icono: '🏅', logrado: !datos.rango_actual.includes('Genin') 
-        }
-    ];
 
     return (
         <div className="min-h-screen bg-[#05070A] p-4 md:p-10 flex flex-col items-center">
@@ -138,12 +114,12 @@ const PerfilEstudiante = () => {
                             <div
                                 className="w-full h-full bg-slate-900 rounded-full flex items-center justify-center border-4 border-shinobi-gold shadow-xl overflow-hidden relative cursor-pointer"
                                 onClick={() => fileInputRef.current.click()}
-                                style={{ backgroundColor: !fotoPerfil ? generarColorAvatar(nombre) : 'transparent' }}
+                                style={{ backgroundColor: !fotoPerfil ? generarColorAvatar(datos.nombre_completo) : 'transparent' }}
                             >
                                 {fotoPerfil ? (
                                     <img src={obtenerUrlImagen(fotoPerfil)} alt="Avatar" className="w-full h-full object-cover" />
                                 ) : (
-                                    <span className="text-6xl text-white font-scholar">{nombre.charAt(0).toUpperCase()}</span>
+                                    <span className="text-6xl text-white font-scholar">{datos.nombre_completo.charAt(0).toUpperCase()}</span>
                                 )}
 
                                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -154,11 +130,11 @@ const PerfilEstudiante = () => {
                             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleSubirFoto} />
                         </div>
 
-                        <h3 className="text-2xl font-scholar text-white leading-tight uppercase">{nombre}</h3>
-                        <p className="text-[10px] text-slate-500 uppercase font-bold mt-1 tracking-widest">{email}</p>
+                        <h3 className="text-2xl font-scholar text-white leading-tight uppercase">{datos.nombre_completo}</h3>
+                        <p className="text-[10px] text-slate-500 uppercase font-bold mt-1 tracking-widest">{datos.correo}</p>
 
                         <div className="mt-6 px-4 py-2 bg-shinobi-gold/10 border border-shinobi-gold/30 text-shinobi-gold text-[10px] font-black uppercase tracking-[0.2em] rounded-full inline-block">
-                            Rango: {datos.rango_actual}
+                            Nivel: {datos.rango_actual}
                         </div>
                     </div>
 
@@ -178,46 +154,54 @@ const PerfilEstudiante = () => {
                             </div>
                             <div className="text-center w-1/2">
                                 <p className="text-2xl text-white font-scholar">{datos.ejercicios_completados}</p>
-                                <p className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">MISIONES</p>
+                                <p className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">MÓDULOS</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* 🚩 COLUMNA DERECHA: RÉCORDS E HITOS (GAMIFICACIÓN) */}
+                {/* 🚩 COLUMNA DERECHA: RÉCORDS E HITOS (AHORA SÍ 100% DINÁMICOS DESDE LA BD) */}
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-[#0E121C] border border-white/5 p-8 rounded-[2rem] shadow-xl">
                         <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
                             <div>
-                                <h4 className="text-sm font-scholar text-white uppercase tracking-[0.2em]">Récords Académicos</h4>
-                                <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest mt-1">Hitos de Sabiduría</p>
+                                <h4 className="text-sm font-scholar text-white uppercase tracking-[0.2em]">Registro de Hitos</h4>
+                                <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest mt-1">Tu Colección de Insignias</p>
                             </div>
                             <span className="text-2xl animate-pulse">🏆</span>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {hitos.map(hito => (
-                                <div 
-                                    key={hito.id} 
-                                    className={`p-5 rounded-2xl border transition-all duration-500 flex items-center gap-4
-                                        ${hito.logrado 
-                                            ? 'bg-shinobi-gold/10 border-shinobi-gold/30 hover:bg-shinobi-gold/20 hover:border-shinobi-gold/50 shadow-[0_0_15px_rgba(197,160,89,0.1)]' 
-                                            : 'bg-slate-900/50 border-white/5 opacity-60 grayscale'}`}
-                                >
-                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-inner
-                                        ${hito.logrado ? 'bg-shinobi-gold/20 border border-shinobi-gold/50' : 'bg-black border border-white/10'}`}>
-                                        {hito.logrado ? hito.icono : '🔒'}
-                                    </div>
-                                    <div>
-                                        <h5 className={`text-xs font-black uppercase tracking-wider mb-1 ${hito.logrado ? 'text-shinobi-gold' : 'text-slate-400'}`}>
-                                            {hito.titulo}
-                                        </h5>
-                                        <p className="text-[10px] text-slate-400 leading-tight">
-                                            {hito.desc}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
+                            {datos.todas_insignias.length > 0 ? (
+                                datos.todas_insignias.map(insignia => {
+                                    const ganada = datos.insignias_obtenidas.some(i => i.id_insignia === insignia.id_insignia);
+                                    
+                                    return (
+                                        <div 
+                                            key={insignia.id_insignia} 
+                                            className={`p-5 rounded-2xl border transition-all duration-500 flex items-center gap-4
+                                                ${ganada 
+                                                    ? 'bg-shinobi-gold/10 border-shinobi-gold/30 hover:bg-shinobi-gold/20 hover:border-shinobi-gold/50 shadow-[0_0_15px_rgba(197,160,89,0.1)]' 
+                                                    : 'bg-slate-900/50 border-white/5 opacity-60 grayscale'}`}
+                                        >
+                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-inner flex-shrink-0
+                                                ${ganada ? 'bg-shinobi-gold/20 border border-shinobi-gold/50' : 'bg-black border border-white/10'}`}>
+                                                {ganada ? '🏅' : '🔒'}
+                                            </div>
+                                            <div>
+                                                <h5 className={`text-xs font-black uppercase tracking-wider mb-1 ${ganada ? 'text-shinobi-gold' : 'text-slate-400'}`}>
+                                                    {insignia.nombre_insignia}
+                                                </h5>
+                                                <p className="text-[10px] text-slate-400 leading-tight">
+                                                    {insignia.descripcion}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <p className="text-slate-500 italic text-sm p-4 col-span-full">Aún no hay insignias registradas en la academia.</p>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -32,8 +32,9 @@ const DashboardEstudiante = () => {
             setDatos(resDash.data);
             setErrores(resErrores.data);
 
-            if (resPerfil.data?.nombre_completo) {
-                const primerNombre = resPerfil.data.nombre_completo.split(' ')[0];
+            if (resPerfil.data?.nombre_completo || resPerfil.data?.nombre) {
+                const nombreCompleto = resPerfil.data.nombre_completo || resPerfil.data.nombre;
+                const primerNombre = nombreCompleto.split(' ')[0];
                 setNombreUsuario(primerNombre);
                 localStorage.setItem('user_name', primerNombre);
             }
@@ -88,10 +89,13 @@ const DashboardEstudiante = () => {
         return `${BACKEND_URL}${ruta.startsWith('/') ? '' : '/'}${ruta}`;
     };
 
-    // 🚩 FUNCIONES DEL ONBOARDING
+    // 🚩 LÓGICA DINÁMICA DE INSIGNIAS: Cruzamos los IDs obtenidos con los detalles reales
+    const insigniasHeredadasDetalle = (datos?.insignias_obtenidas || []).map(obtenida => {
+        return datos?.todas_insignias?.find(i => i.id_insignia === obtenida.id_insignia);
+    }).filter(Boolean); // Filtramos por si hay algún undefined
+
     const avanzarOnboarding = () => {
-        const insigniasGanadas = datos?.insignias_obtenidas || [];
-        if (pasoOnboarding < insigniasGanadas.length) {
+        if (pasoOnboarding < insigniasHeredadasDetalle.length) {
             setPasoOnboarding(pasoOnboarding + 1);
         } else {
             cerrarOnboarding();
@@ -100,7 +104,7 @@ const DashboardEstudiante = () => {
 
     const cerrarOnboarding = () => {
         setOnboardingActive(false);
-        window.history.replaceState({}, document.title); // Limpiamos el historial para que no reaparezca al darle F5
+        window.history.replaceState({}, document.title); 
     };
 
     if (loading) return (
@@ -132,12 +136,10 @@ const DashboardEstudiante = () => {
         { label: 'FORO', path: '/estudiante/foro', icon: '👥' },
     ];
 
-    const insigniasHeredadas = datos?.insignias_obtenidas || [];
-
     return (
         <div className="min-h-screen bg-[#05070A] flex text-slate-300 font-modern overflow-hidden selection:bg-shinobi-gold/30">
 
-            {/* 🚩 MODAL DE ONBOARDING Y UNBOXING DE INSIGNIAS */}
+            {/* 🚩 MODAL DE ONBOARDING 100% DINÁMICO */}
             <AnimatePresence>
                 {onboardingActivo && datos && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">
@@ -148,7 +150,6 @@ const DashboardEstudiante = () => {
                             className="bg-[#0E121C] border border-shinobi-gold/30 rounded-[2.5rem] p-8 max-w-md w-full text-center shadow-[0_0_50px_rgba(197,160,89,0.1)] relative overflow-hidden"
                         >
                             {pasoOnboarding === 0 ? (
-                                // PASO 0: EXPLICACIÓN DEL DASHBOARD
                                 <div className="space-y-6">
                                     <div className="w-20 h-20 bg-shinobi-gold/10 rounded-full mx-auto flex items-center justify-center border border-shinobi-gold/30">
                                         <span className="text-4xl">⛩️</span>
@@ -161,11 +162,10 @@ const DashboardEstudiante = () => {
                                         onClick={avanzarOnboarding}
                                         className="w-full bg-shinobi-gold text-black py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white transition-all shadow-lg mt-4"
                                     >
-                                        {insigniasHeredadas.length > 0 ? 'Siguiente →' : 'Comenzar mi Entrenamiento'}
+                                        {insigniasHeredadasDetalle.length > 0 ? 'Ver Recompensas Iniciales →' : 'Comenzar mi Entrenamiento'}
                                     </button>
                                 </div>
                             ) : (
-                                // PASOS 1...N: UNBOXING DE INSIGNIAS HEREDADAS
                                 <div className="space-y-6">
                                     <div className="absolute top-0 left-0 w-full h-full bg-shinobi-gold/5 blur-3xl -z-10 animate-pulse"></div>
                                     <span className="text-[10px] text-shinobi-gold uppercase tracking-[0.3em] font-bold block mb-2">Convalidación de Conocimiento</span>
@@ -181,17 +181,18 @@ const DashboardEstudiante = () => {
                                     </motion.div>
                                     
                                     <h2 className="text-xl font-bold text-white uppercase mt-6">
-                                        {insigniasHeredadas[pasoOnboarding - 1]?.nombre_insignia || 'Sello de Maestría'}
+                                        {/* Extraemos el nombre y descripción directamente de la DB */}
+                                        {insigniasHeredadasDetalle[pasoOnboarding - 1]?.nombre_insignia}
                                     </h2>
-                                    <p className="text-xs text-slate-400 italic px-4">
-                                        "{insigniasHeredadas[pasoOnboarding - 1]?.descripcion || 'Otorgada por tu excelente desempeño en el diagnóstico inicial.'}"
+                                    <p className="text-xs text-slate-400 italic px-4 min-h-[40px]">
+                                        "{insigniasHeredadasDetalle[pasoOnboarding - 1]?.descripcion}"
                                     </p>
                                     
                                     <button 
                                         onClick={avanzarOnboarding}
                                         className="w-full bg-transparent border-2 border-shinobi-gold text-shinobi-gold py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-shinobi-gold hover:text-black transition-all mt-6"
                                     >
-                                        {pasoOnboarding < insigniasHeredadas.length ? 'Revelar Siguiente Sello' : 'Ir al Dashboard Central'}
+                                        {pasoOnboarding < insigniasHeredadasDetalle.length ? 'Revelar Siguiente Sello' : 'Ir al Dashboard Central'}
                                     </button>
                                 </div>
                             )}
@@ -208,7 +209,7 @@ const DashboardEstudiante = () => {
                 ${isExpanded ? 'w-72 shadow-[20px_0_50px_rgba(0,0,0,0.5)]' : 'w-24'}`}
             >
                 <button
-                    onClick={() => { localStorage.clear(); navigate('/') }}
+                    onClick={() => { localStorage.clear(); navigate('/'); }}
                     className="mb-8 group flex items-center gap-4 p-3 text-rose-500/60 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all uppercase font-scholar text-[10px] tracking-widest w-full"
                 >
                     <span className="text-xl group-hover:scale-110 transition-transform">🚪</span>
@@ -372,7 +373,6 @@ const DashboardEstudiante = () => {
 
                 {/* 🚩 SECCIÓN 3: ESTADÍSTICAS RÁPIDAS */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-10">
-
                     <div className="bg-[#0E121C]/80 border border-rose-500/30 p-6 md:p-8 rounded-[2rem] md:rounded-3xl relative overflow-hidden group hover:border-rose-500 transition-all shadow-[0_0_20px_rgba(244,63,94,0.05)] hover:shadow-[0_0_30px_rgba(244,63,94,0.15)]">
                         <div className="absolute top-0 left-0 w-1 h-full bg-rose-500 opacity-50 group-hover:opacity-100 transition-opacity"></div>
                         <div className="absolute -right-4 -top-4 text-6xl opacity-10 blur-sm group-hover:scale-110 transition-transform">🔥</div>
@@ -492,7 +492,7 @@ const DashboardEstudiante = () => {
                         <div className="flex items-center gap-4 text-center md:text-left">
                             <span className="text-2xl md:text-3xl">⚠️</span>
                             <div>
-                                <h4 className="text-rose-500 font-scholar text-[10px] md:text-xs uppercase tracking-[0.2em]">Áreas de Oportunidad</h4>
+                                <h4 className="text-rose-500 font-scholar text-[10px] md:text-xs uppercase tracking-[0.2em]">Fallas Detectadas</h4>
                                 <p className="text-[9px] md:text-[11px] text-slate-400 uppercase mt-1">El registro detecta {errores.length} puntos que requieren repaso.</p>
                             </div>
                         </div>
@@ -500,7 +500,7 @@ const DashboardEstudiante = () => {
                             onClick={() => navigate('/estudiante/historial-errores')}
                             className="w-full md:w-auto bg-rose-600/20 hover:bg-rose-600 text-rose-500 hover:text-white border border-rose-500/30 px-6 py-3 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-rose-500/20"
                         >
-                            Ver Historial
+                            Camino de Corrección
                         </button>
                     </div>
                 )}
@@ -554,7 +554,7 @@ const DashboardEstudiante = () => {
 
                                 <div className="space-y-2 md:space-y-3">
                                     <div className="flex justify-between items-end">
-                                        <span className="text-[8px] md:text-[9px] font-bold text-slate-600 uppercase tracking-widest">Progreso</span>
+                                        <span className="text-[8px] md:text-[9px] font-bold text-slate-600 uppercase tracking-widest">Sincronización</span>
                                         <span className={`text-[10px] md:text-xs font-scholar font-bold ${estiloModulo.color}`}>{modulo.porcentaje_avance || 0}%</span>
                                     </div>
                                     <div className="h-1.5 md:h-2 w-full bg-black/40 rounded-full p-[1px] md:p-[2px] border border-white/5">
