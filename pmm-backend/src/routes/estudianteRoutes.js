@@ -23,6 +23,7 @@ router.get('/notificaciones', verificarToken, estudianteController.obtenerNotifi
 // 💬 Foro
 router.get('/foro/temas', verificarToken, estudianteController.obtenerTemasForo);
 router.get('/foro/comentarios/:id_post', verificarToken, estudianteController.obtenerComentarios);
+
 // La ruta blindada definitiva:
 router.post('/tutor-ia', verificarToken, estudianteController.consultarOraculo);
 // 🚩 CORREGIDO: Apuntando a la función real del controlador

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const DashboardEstudiante = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    
+
     const [datos, setDatos] = useState(null);
     const [loading, setLoading] = useState(true);
     const [loadingIA, setLoadingIA] = useState(true);
@@ -54,7 +54,7 @@ const DashboardEstudiante = () => {
             if (err.response?.status === 403) {
                 navigate('/estudiante/diagnostico');
             } else {
-                navigate('/'); 
+                navigate('/');
             }
             setLoading(false);
         }
@@ -104,7 +104,7 @@ const DashboardEstudiante = () => {
 
     const cerrarOnboarding = () => {
         setOnboardingActive(false);
-        window.history.replaceState({}, document.title); 
+        window.history.replaceState({}, document.title);
     };
 
     if (loading) return (
@@ -121,8 +121,8 @@ const DashboardEstudiante = () => {
 
     const efectividadInicial = Math.round((puntajeIA / 13) * 100);
     const efectividadActual = Math.round((misionesCompletas / totalMisiones) * 100);
-    const heightInicial = Math.max(efectividadInicial, 2); 
-    const heightActual = Math.max(efectividadActual, 2);   
+    const heightInicial = Math.max(efectividadInicial, 2);
+    const heightActual = Math.max(efectividadActual, 2);
 
     const rutaUnica = datos?.ruta_ia_asignada?.filter((modulo, index, self) =>
         index === self.findIndex((m) => m.id_modulo === modulo.id_modulo)
@@ -143,9 +143,9 @@ const DashboardEstudiante = () => {
             <AnimatePresence>
                 {onboardingActivo && datos && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">
-                        <motion.div 
-                            initial={{ opacity: 0, scale: 0.9 }} 
-                            animate={{ opacity: 1, scale: 1 }} 
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
                             className="bg-[#0E121C] border border-shinobi-gold/30 rounded-[2.5rem] p-8 max-w-md w-full text-center shadow-[0_0_50px_rgba(197,160,89,0.1)] relative overflow-hidden"
                         >
@@ -154,11 +154,11 @@ const DashboardEstudiante = () => {
                                     <div className="w-20 h-20 bg-shinobi-gold/10 rounded-full mx-auto flex items-center justify-center border border-shinobi-gold/30">
                                         <span className="text-4xl">⛩️</span>
                                     </div>
-                                    <h2 className="text-2xl font-scholar text-white uppercase italic">Bienvenido al <br/><span className="text-shinobi-gold">Panel Académico</span></h2>
+                                    <h2 className="text-2xl font-scholar text-white uppercase italic">Bienvenido al <br /><span className="text-shinobi-gold">Panel Académico</span></h2>
                                     <p className="text-sm text-slate-400 leading-relaxed font-modern">
                                         Este es tu centro de mando. Aquí encontrarás tu <strong>Malla Curricular</strong> adaptada por nuestra IA según tus resultados, estadísticas de tu evolución y recomendaciones en tiempo real para mejorar tus puntos débiles.
                                     </p>
-                                    <button 
+                                    <button
                                         onClick={avanzarOnboarding}
                                         className="w-full bg-shinobi-gold text-black py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white transition-all shadow-lg mt-4"
                                     >
@@ -169,8 +169,8 @@ const DashboardEstudiante = () => {
                                 <div className="space-y-6">
                                     <div className="absolute top-0 left-0 w-full h-full bg-shinobi-gold/5 blur-3xl -z-10 animate-pulse"></div>
                                     <span className="text-[10px] text-shinobi-gold uppercase tracking-[0.3em] font-bold block mb-2">Convalidación de Conocimiento</span>
-                                    
-                                    <motion.div 
+
+                                    <motion.div
                                         key={pasoOnboarding}
                                         initial={{ rotateY: 90, opacity: 0 }}
                                         animate={{ rotateY: 0, opacity: 1 }}
@@ -179,7 +179,7 @@ const DashboardEstudiante = () => {
                                     >
                                         <span className="text-5xl">🏅</span>
                                     </motion.div>
-                                    
+
                                     <h2 className="text-xl font-bold text-white uppercase mt-6">
                                         {/* Extraemos el nombre y descripción directamente de la DB */}
                                         {insigniasHeredadasDetalle[pasoOnboarding - 1]?.nombre_insignia}
@@ -187,8 +187,8 @@ const DashboardEstudiante = () => {
                                     <p className="text-xs text-slate-400 italic px-4 min-h-[40px]">
                                         "{insigniasHeredadasDetalle[pasoOnboarding - 1]?.descripcion}"
                                     </p>
-                                    
-                                    <button 
+
+                                    <button
                                         onClick={avanzarOnboarding}
                                         className="w-full bg-transparent border-2 border-shinobi-gold text-shinobi-gold py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-shinobi-gold hover:text-black transition-all mt-6"
                                     >
@@ -226,7 +226,7 @@ const DashboardEstudiante = () => {
                         ${configGlobal.border} ${isExpanded ? 'w-16 h-16 rotate-[360deg]' : 'w-12 h-12'}`}
                     >
                         {fotoPerfil ? (
-                          <img src={obtenerUrlImagen(fotoPerfil)} alt="Avatar" className="w-full h-full object-cover" />
+                            <img src={obtenerUrlImagen(fotoPerfil)} alt="Avatar" className="w-full h-full object-cover" />
                         ) : (
                             <span className={`font-scholar transition-all font-bold ${isExpanded ? 'text-2xl' : 'text-lg'} ${configGlobal.color}`}>
                                 {nombreUsuario.charAt(0).toUpperCase()}
@@ -505,75 +505,131 @@ const DashboardEstudiante = () => {
                     </div>
                 )}
 
-                {/* 🚩 SECCIÓN 6: RUTA DE MAESTRÍA ACUMULATIVA */}
-                <div className="flex items-center justify-between mb-6 md:mb-8">
-                    <h3 className="font-scholar text-xs md:text-sm text-white/80 uppercase tracking-[0.2em] md:tracking-[0.3em]">Malla Curricular</h3>
-                    <div className="h-px flex-1 mx-4 md:mx-8 bg-gradient-to-r from-white/10 to-transparent"></div>
+                {/* 🚩 SECCIÓN 6: ÁRBOL DE HABILIDADES (SKILL TREE) */}
+                <div className="flex items-center justify-between mb-12 mt-16 relative z-10">
+                    <h3 className="font-scholar text-sm md:text-lg text-white uppercase tracking-[0.3em] drop-shadow-lg">Árbol de Sabiduría</h3>
+                    <div className="h-px flex-1 mx-6 bg-gradient-to-r from-shinobi-gold/50 via-white/5 to-transparent"></div>
                 </div>
-                
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
-                    {rutaUnica.map((modulo, index) => {
-                        const estiloModulo = getEstiloNivel(modulo.nivel);
-                        const misionBloqueada = index > 0 && (rutaUnica[index - 1].porcentaje_avance < 100);
 
-                        return (
-                            <div
-                                key={modulo.id_modulo}
-                                onClick={() => !misionBloqueada && navigate(`/estudiante/modulo/${modulo.id_modulo}`)}
-                                className={`group relative p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] transition-all duration-500 shadow-xl overflow-hidden border
-                                    ${misionBloqueada
-                                        ? 'bg-slate-950/40 border-white/5 cursor-not-allowed opacity-60 grayscale'
-                                        : 'bg-[#0E121C]/60 border-white/5 cursor-pointer hover:bg-[#121826] hover:-translate-y-1 md:hover:-translate-y-2'}`}
-                            >
-                                {misionBloqueada && (
-                                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[1px]">
-                                        <span className="text-2xl md:text-3xl mb-2">🔒</span>
-                                        <p className="text-[8px] md:text-[10px] font-scholar text-rose-500 tracking-[0.2em] uppercase font-bold">Nivel Restringido</p>
-                                    </div>
-                                )}
+                <div className="relative w-full max-w-5xl mx-auto py-10">
+                    {/* TRONCO CENTRAL DEL ÁRBOL */}
+                    <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-1 bg-white/5 -translate-x-1/2 rounded-full z-0"></div>
 
-                                <div className="flex justify-between items-start mb-4 md:mb-6">
-                                    <div className="space-y-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-[8px] md:text-[9px] text-slate-500 font-black tracking-widest uppercase">Módulo {index + 1}</span>
-                                            <span className={`text-[6px] md:text-[7px] px-2 py-0.5 rounded-full border font-bold ${estiloModulo.border} ${estiloModulo.color} bg-black/20`}>
-                                                {estiloModulo.label}
+                    <div className="space-y-16 md:space-y-24 relative z-10">
+                        {rutaUnica.map((modulo, index) => {
+                            const estiloModulo = getEstiloNivel(modulo.nivel);
+                            const misionBloqueada = index > 0 && (rutaUnica[index - 1].porcentaje_avance < 100);
+                            const misionCompletada = modulo.porcentaje_avance === 100;
+                            const misionActiva = !misionBloqueada && !misionCompletada;
+
+                            // Alternar izquierda/derecha en pantallas grandes
+                            const isEven = index % 2 === 0;
+
+                            return (
+                                <motion.div
+                                    key={modulo.id_modulo}
+                                    initial={{ opacity: 0, y: 40 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true, margin: "-50px" }}
+                                    transition={{ duration: 0.6, type: "spring" }}
+                                    className={`relative flex flex-col md:flex-row items-center ${isEven ? 'md:flex-row-reverse' : ''}`}
+                                >
+                                    {/* 🚩 NODO CENTRAL (El punto de la constelación) */}
+                                    <div className="absolute left-8 md:left-1/2 -translate-x-1/2 flex flex-col items-center justify-center z-30">
+                                        <div
+                                            className={`w-14 h-14 md:w-20 md:h-20 rounded-full border-4 flex items-center justify-center transition-all duration-700
+                                            ${misionCompletada ? `bg-slate-900 ${estiloModulo.border} shadow-[0_0_30px_rgba(16,185,129,0.3)] scale-110` :
+                                                    misionActiva ? 'bg-[#0E121C] border-shinobi-gold shadow-[0_0_25px_rgba(197,160,89,0.6)] scale-125 animate-pulse' :
+                                                        'bg-slate-900 border-white/10 opacity-60'}`}
+                                        >
+                                            <span className={`text-2xl md:text-3xl ${misionActiva ? 'animate-bounce mt-1' : ''}`}>
+                                                {misionCompletada ? '✨' : misionActiva ? '🔥' : '🔒'}
                                             </span>
                                         </div>
-                                        <h4 className="text-lg md:text-2xl font-scholar text-white group-hover:text-shinobi-gold transition-colors tracking-tight">{modulo.nombre_modulo}</h4>
-                                    </div>
-                                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full border border-white/10 flex items-center justify-center font-scholar text-[10px] md:text-xs transition-all duration-500 flex-shrink-0 ml-2
-                                        ${modulo.porcentaje_avance === 100 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'text-slate-600'}`}>
-                                        {modulo.porcentaje_avance === 100 ? '✓' : index + 1}
-                                    </div>
-                                </div>
 
-                                <p className="text-[10px] md:text-xs text-slate-400 mb-6 md:mb-10 leading-relaxed line-clamp-2 italic">
-                                    {modulo.descripcion || "Contenido académico disponible para este módulo..."}
-                                </p>
-
-                                <div className="space-y-2 md:space-y-3">
-                                    <div className="flex justify-between items-end">
-                                        <span className="text-[8px] md:text-[9px] font-bold text-slate-600 uppercase tracking-widest">Sincronización</span>
-                                        <span className={`text-[10px] md:text-xs font-scholar font-bold ${estiloModulo.color}`}>{modulo.porcentaje_avance || 0}%</span>
+                                        {/* Línea de chakra brillante que conecta con el siguiente nodo (si está completado) */}
+                                        {misionCompletada && index !== rutaUnica.length - 1 && (
+                                            <motion.div
+                                                initial={{ height: 0 }}
+                                                whileInView={{ height: '150px' }}
+                                                viewport={{ once: true }}
+                                                transition={{ duration: 1, delay: 0.5 }}
+                                                className={`absolute top-full w-1 ${estiloModulo.bar} shadow-[0_0_15px] ${estiloModulo.shadow} -z-10 hidden md:block`}
+                                            />
+                                        )}
                                     </div>
-                                    <div className="h-1.5 md:h-2 w-full bg-black/40 rounded-full p-[1px] md:p-[2px] border border-white/5">
+
+                                    {/* 🚩 TARJETA DEL MÓDULO */}
+                                    <div className={`w-full md:w-1/2 pl-28 md:pl-0 ${isEven ? 'md:pr-20 text-left md:text-right' : 'md:pl-20 text-left'}`}>
                                         <div
-                                            className={`h-full rounded-full transition-all duration-[1.5s] ease-out relative ${estiloModulo.bar} ${estiloModulo.shadow} shadow-[0_0_15px] md:shadow-[0_0_20px]`}
-                                            style={{ width: `${modulo.porcentaje_avance || 0}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
+                                            onClick={() => !misionBloqueada && navigate(`/estudiante/modulo/${modulo.id_modulo}`)}
+                                            className={`group relative p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] transition-all duration-500 shadow-xl overflow-hidden border backdrop-blur-sm
+                                                ${misionBloqueada
+                                                    ? 'bg-slate-950/60 border-white/5 cursor-not-allowed opacity-50 grayscale'
+                                                    : 'bg-[#0E121C]/80 border-white/10 cursor-pointer hover:bg-[#121826] hover:-translate-y-2 hover:border-shinobi-gold/50 hover:shadow-[0_15px_40px_rgba(197,160,89,0.15)]'}`}
+                                        >
+                                            {/* Efecto de aura activa */}
+                                            {misionActiva && <div className="absolute inset-0 bg-shinobi-gold/5 blur-2xl z-0 pointer-events-none"></div>}
 
-                                {!misionBloqueada && (
-                                    <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-white/5 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-all translate-y-4 group-hover:translate-y-0">
-                                        <span className={`text-[8px] md:text-[9px] font-scholar tracking-[0.2em] md:tracking-[0.3em] uppercase ${estiloModulo.color}`}>Ingresar al Aula</span>
-                                        <span className="text-lg md:text-xl animate-pulse">📚</span>
+                                            <div className={`relative z-10 flex justify-between items-start mb-4 md:mb-6 ${isEven ? 'md:flex-row-reverse' : ''}`}>
+                                                <div className="space-y-1">
+                                                    <div className={`flex items-center gap-2 mb-1 ${isEven ? 'md:justify-end' : 'justify-start'}`}>
+                                                        <span className="text-[8px] md:text-[9px] text-slate-500 font-black tracking-widest uppercase">Misión {index + 1}</span>
+                                                        <span className={`text-[6px] md:text-[7px] px-2 py-0.5 rounded-full border font-bold ${estiloModulo.border} ${estiloModulo.color} bg-black/40`}>
+                                                            {estiloModulo.label}
+                                                        </span>
+                                                    </div>
+                                                    <h4 className="text-xl md:text-2xl font-scholar text-white group-hover:text-shinobi-gold transition-colors tracking-tight leading-tight">
+                                                        {modulo.nombre_modulo}
+                                                    </h4>
+                                                </div>
+
+                                                {/* Mini indicador de estado en la esquina */}
+                                                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full border border-white/10 flex items-center justify-center font-scholar text-[10px] md:text-xs transition-all duration-500 flex-shrink-0 
+                                                    ${isEven ? 'mr-4 md:mr-0 md:ml-4' : 'ml-4'}
+                                                    ${misionCompletada ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'text-slate-600 bg-black/30'}`}>
+                                                    {misionCompletada ? '✓' : index + 1}
+                                                </div>
+                                            </div>
+
+                                            <p className="relative z-10 text-[10px] md:text-xs text-slate-400 mb-6 md:mb-8 leading-relaxed line-clamp-2 italic">
+                                                {modulo.descripcion || "Contenido académico cifrado en este pergamino..."}
+                                            </p>
+
+                                            <div className="relative z-10 space-y-2 md:space-y-3">
+                                                <div className="flex justify-between items-end">
+                                                    <span className="text-[8px] md:text-[9px] font-bold text-slate-600 uppercase tracking-widest">Sincronización</span>
+                                                    <span className={`text-[10px] md:text-xs font-scholar font-bold ${estiloModulo.color}`}>{modulo.porcentaje_avance || 0}%</span>
+                                                </div>
+                                                <div className="h-1.5 md:h-2 w-full bg-black/60 rounded-full p-[1px] md:p-[2px] border border-white/5 overflow-hidden">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        whileInView={{ width: `${modulo.porcentaje_avance || 0}%` }}
+                                                        viewport={{ once: true }}
+                                                        transition={{ duration: 1.5, ease: "easeOut" }}
+                                                        className={`h-full rounded-full relative ${estiloModulo.bar} ${estiloModulo.shadow} shadow-[0_0_15px] md:shadow-[0_0_20px]`}
+                                                    ></motion.div>
+                                                </div>
+                                            </div>
+
+                                            {!misionBloqueada && (
+                                                <div className={`relative z-10 mt-6 md:mt-8 pt-4 md:pt-6 border-t border-white/5 flex items-center opacity-0 group-hover:opacity-100 transition-all translate-y-4 group-hover:translate-y-0
+                                                    ${isEven ? 'justify-between md:flex-row-reverse' : 'justify-between'}`}>
+                                                    <span className={`text-[8px] md:text-[9px] font-scholar tracking-[0.2em] md:tracking-[0.3em] uppercase font-bold
+                                                        ${misionCompletada ? 'text-emerald-500' : 'text-shinobi-gold'}`}>
+                                                        {misionCompletada ? 'Repasar Lección' : 'Entrar al Dojo'}
+                                                    </span>
+                                                    <span className={`text-lg md:text-xl ${misionActiva ? 'animate-pulse' : ''}`}>
+                                                        {misionCompletada ? '📚' : '⚡'}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                )}
-                            </div>
-                        );
-                    })}
+                                </motion.div>
+                            );
+                        })}
+                    </div>
                 </div>
             </main>
         </div>
