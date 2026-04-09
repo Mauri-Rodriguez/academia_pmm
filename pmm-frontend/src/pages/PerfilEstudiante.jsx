@@ -1,20 +1,17 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import api from '../api/api';
+import { motion } from 'framer-motion';
+import api, { BACKEND_URL } from '../api/api';
 
 const PerfilEstudiante = () => {
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
 
-    // ESTADOS DINÁMICOS
     const [datos, setDatos] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [notificaciones, setNotificaciones] = useState([]);
     const [fotoPerfil, setFotoPerfil] = useState(null);
     const [subiendoFoto, setSubiendoFoto] = useState(false);
 
-    // 🎨 FUNCIÓN DE COLOR PARA AVATAR
     const generarColorAvatar = (nombre = "Ninja") => {
         const colores = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
         let hash = 0;
@@ -22,20 +19,22 @@ const PerfilEstudiante = () => {
         return colores[Math.abs(hash) % colores.length];
     };
 
+    const obtenerUrlImagen = (ruta) => {
+        if (!ruta) return null;
+        if (ruta.startsWith('http')) return ruta;
+        return `${BACKEND_URL}${ruta.startsWith('/') ? '' : '/'}${ruta}`;
+    };
+
     useEffect(() => {
         const inicializarPerfil = async () => {
             try {
-                const [resUser, resDash, resNotif] = await Promise.all([
+                const [resUser, resDash] = await Promise.all([
                     api.get('/api/estudiante/perfil/datos').catch(() => ({ data: {} })),
-                    api.get('/api/estudiante/dashboard').catch(() => ({ data: {} })),
-                    api.get('/api/estudiante/notificaciones').catch(() => ({ data: [] }))
+                    api.get('/api/estudiante/dashboard').catch(() => ({ data: {} }))
                 ]);
 
-                // 🚩 EXTRAEMOS LOS DATOS EXACTAMENTE COMO EN EL DASHBOARD
                 const dashStats = resDash.data?.estadisticas || {};
                 const puntajeIA = dashStats.puntaje || 0;
-
-                // 🚩 USAMOS TU FÓRMULA ORIGINAL: (puntaje / 13) * 100
                 const efectividadReal = Math.round((puntajeIA / 13) * 100) || 0;
                 const misionesCompletas = dashStats.modulos_completados || 0;
 
@@ -45,18 +44,16 @@ const PerfilEstudiante = () => {
                     rango_actual: dashStats.rango_actual || 'Genin (Iniciado)',
                     puntaje_total: puntajeIA,
                     ejercicios_completados: misionesCompletas,
-                    efectividad: efectividadReal // 👈 Ahora sí coincidirá
+                    efectividad: efectividadReal,
+                    racha_dias: dashStats.racha_dias || 0
                 });
 
                 if (resUser.data?.foto_perfil) {
-                    const urlCompleta = `${import.meta.env.VITE_API_URL}${resUser.data.foto_perfil}`;
-                    setFotoPerfil(urlCompleta);
-                    localStorage.setItem('user_avatar', urlCompleta);
+                    setFotoPerfil(resUser.data.foto_perfil);
+                    localStorage.setItem('user_avatar', resUser.data.foto_perfil);
                 } else if (localStorage.getItem('user_avatar')) {
                     setFotoPerfil(localStorage.getItem('user_avatar'));
                 }
-
-                setNotificaciones(Array.isArray(resNotif.data) ? resNotif.data : []);
 
             } catch (err) {
                 console.error("Error crítico de red al inicializar perfil:", err);
@@ -66,6 +63,7 @@ const PerfilEstudiante = () => {
         };
         inicializarPerfil();
     }, []);
+
     const handleSubirFoto = async (e) => {
         const archivo = e.target.files[0];
         if (!archivo) return;
@@ -76,11 +74,8 @@ const PerfilEstudiante = () => {
 
         try {
             const res = await api.post('/api/estudiante/perfil/avatar', formData);
-            const nuevaUrl = `${import.meta.env.VITE_API_URL}${res.data.url}`;
-
-            setFotoPerfil(nuevaUrl);
-            localStorage.setItem('user_avatar', nuevaUrl);
-            alert("¡Sello de identidad actualizado!");
+            setFotoPerfil(res.data.url);
+            localStorage.setItem('user_avatar', res.data.url);
         } catch (err) {
             console.error(err);
             alert("Error al actualizar la imagen en el servidor.");
@@ -89,21 +84,38 @@ const PerfilEstudiante = () => {
         }
     };
 
-    const marcarLeida = async (id) => {
-        try {
-            await api.put(`/api/estudiante/notificaciones/${id}/leida`);
-            setNotificaciones(notificaciones.map(n => n.id_notificacion === id ? { ...n, leida: 1 } : n));
-        } catch (err) { console.error("Error al marcar como leída:", err); }
-    };
-
     if (loading) return (
         <div className="min-h-screen bg-[#05070A] flex items-center justify-center">
             <div className="w-12 h-12 border-4 border-shinobi-gold border-t-transparent rounded-full animate-spin"></div>
         </div>
     );
 
-    const nombre = datos?.nombre_completo || 'Ninja';
+    const nombre = datos?.nombre_completo || 'Estudiante';
     const email = datos?.correo || 'correo@academia.edu';
+
+    // 🚩 LÓGICA DE HITOS GAMIFICADOS
+    const hitos = [
+        { 
+            id: 1, titulo: 'Primera Sangre', 
+            desc: 'Completaste tu primer módulo.', 
+            icono: '🎯', logrado: datos.ejercicios_completados > 0 
+        },
+        { 
+            id: 2, titulo: 'Precisión Letal', 
+            desc: 'Alcanzaste 80% o más de efectividad.', 
+            icono: '⚡', logrado: datos.efectividad >= 80 
+        },
+        { 
+            id: 3, titulo: 'Voluntad de Fuego', 
+            desc: 'Mantuvo una racha de más de 3 días.', 
+            icono: '🔥', logrado: datos.racha_dias >= 3 
+        },
+        { 
+            id: 4, titulo: 'Ascenso de Rango', 
+            desc: 'Superaste el nivel básico.', 
+            icono: '🏅', logrado: !datos.rango_actual.includes('Genin') 
+        }
+    ];
 
     return (
         <div className="min-h-screen bg-[#05070A] p-4 md:p-10 flex flex-col items-center">
@@ -112,106 +124,104 @@ const PerfilEstudiante = () => {
                 onClick={() => navigate('/estudiante/dashboard')}
                 className="self-start mb-6 text-slate-500 hover:text-shinobi-gold transition-all text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2"
             >
-                ← Volver al Dojo
+                ← Volver al Panel
             </button>
 
-            <div className="max-w-4xl w-full grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                {/* COLUMNA IZQUIERDA: PERFIL DINÁMICO */}
+                {/* COLUMNA IZQUIERDA: PERFIL Y STATS */}
                 <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-[#f4f1e1] p-8 rounded-sm shadow-2xl border-t-8 border-shinobi-gold text-center relative overflow-hidden">
+                    <div className="bg-[#0E121C] border border-white/5 p-8 rounded-[2rem] shadow-2xl text-center relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-2 bg-shinobi-gold"></div>
+                        
                         <div className="relative group mx-auto w-32 h-32 mb-6">
                             <div
-                                className="w-full h-full bg-shinobi-dark rounded-2xl flex items-center justify-center border-4 border-shinobi-gold shadow-xl overflow-hidden relative cursor-pointer"
+                                className="w-full h-full bg-slate-900 rounded-full flex items-center justify-center border-4 border-shinobi-gold shadow-xl overflow-hidden relative cursor-pointer"
                                 onClick={() => fileInputRef.current.click()}
                                 style={{ backgroundColor: !fotoPerfil ? generarColorAvatar(nombre) : 'transparent' }}
                             >
                                 {fotoPerfil ? (
-                                    <img src={fotoPerfil} alt="Avatar" className="w-full h-full object-cover" />
+                                    <img src={obtenerUrlImagen(fotoPerfil)} alt="Avatar" className="w-full h-full object-cover" />
                                 ) : (
-                                    <span className="text-6xl text-white font-scholar">{nombre.charAt(0)}</span>
+                                    <span className="text-6xl text-white font-scholar">{nombre.charAt(0).toUpperCase()}</span>
                                 )}
 
                                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                     <span className="text-[10px] text-white font-bold uppercase tracking-widest text-center px-2">Cambiar Sello</span>
                                 </div>
                             </div>
-                            {subiendoFoto && <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center"><div className="w-5 h-5 border-2 border-shinobi-gold border-t-transparent rounded-full animate-spin"></div></div>}
+                            {subiendoFoto && <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center"><div className="w-5 h-5 border-2 border-shinobi-gold border-t-transparent rounded-full animate-spin"></div></div>}
                             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleSubirFoto} />
                         </div>
 
-                        <h3 className="text-2xl font-scholar text-shinobi-dark leading-tight">{nombre}</h3>
-                        <p className="text-[10px] text-slate-500 uppercase font-bold mt-1">{email}</p>
+                        <h3 className="text-2xl font-scholar text-white leading-tight uppercase">{nombre}</h3>
+                        <p className="text-[10px] text-slate-500 uppercase font-bold mt-1 tracking-widest">{email}</p>
 
-                        <div className="mt-4 px-3 py-1 bg-shinobi-dark text-shinobi-gold text-[9px] font-black uppercase rounded-full inline-block">
+                        <div className="mt-6 px-4 py-2 bg-shinobi-gold/10 border border-shinobi-gold/30 text-shinobi-gold text-[10px] font-black uppercase tracking-[0.2em] rounded-full inline-block">
                             Rango: {datos.rango_actual}
                         </div>
                     </div>
 
-                    <div className="bg-[#0E121C] border border-white/5 p-6 rounded-2xl">
-                        <h4 className="text-[10px] text-slate-500 uppercase font-black mb-4 tracking-widest">Progreso de Chakra</h4>
+                    <div className="bg-[#0E121C] border border-white/5 p-6 rounded-[2rem]">
+                        <h4 className="text-[10px] text-slate-500 uppercase font-black mb-4 tracking-widest">Nivel de Dominio</h4>
                         <div className="flex justify-between items-center text-white mb-2">
-                            <span className="text-xs">Efectividad</span>
-                            <span className="text-shinobi-gold font-bold">{datos.efectividad}%</span>
+                            <span className="text-xs font-bold text-slate-400">Efectividad</span>
+                            <span className="text-shinobi-gold font-bold text-lg">{datos.efectividad}%</span>
                         </div>
                         <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                             <motion.div initial={{ width: 0 }} animate={{ width: `${datos.efectividad}%` }} className="h-full bg-shinobi-gold" />
                         </div>
-                        <div className="mt-4 flex justify-between">
-                            <div className="text-center">
-                                <p className="text-xl text-white font-scholar">{datos.puntaje_total}</p>
-                                <p className="text-[8px] text-slate-500 uppercase font-bold">XP TOTAL</p>
+                        <div className="mt-6 flex justify-between border-t border-white/5 pt-4">
+                            <div className="text-center w-1/2 border-r border-white/5">
+                                <p className="text-2xl text-white font-scholar">{datos.puntaje_total}</p>
+                                <p className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">XP TOTAL</p>
                             </div>
-                            <div className="text-center">
-                                <p className="text-xl text-white font-scholar">{datos.ejercicios_completados}</p>
-                                <p className="text-[8px] text-slate-500 uppercase font-bold">MISIONES</p>
+                            <div className="text-center w-1/2">
+                                <p className="text-2xl text-white font-scholar">{datos.ejercicios_completados}</p>
+                                <p className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">MISIONES</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* COLUMNA DERECHA: NOTIFICACIONES Y SEGURIDAD */}
+                {/* 🚩 COLUMNA DERECHA: RÉCORDS E HITOS (GAMIFICACIÓN) */}
                 <div className="lg:col-span-2 space-y-6">
-
-                    <div className="bg-[#0E121C] border border-white/5 rounded-2xl overflow-hidden shadow-xl">
-                        <div className="p-4 bg-white/5 border-b border-white/5 flex justify-between items-center">
-                            <h4 className="text-xs font-scholar text-white uppercase tracking-widest">Buzón de Alertas</h4>
-                            <span className="bg-shinobi-gold text-black text-[9px] px-2 py-0.5 rounded-full font-bold">
-                                {notificaciones.filter(n => !n.leida).length} NUEVAS
-                            </span>
+                    <div className="bg-[#0E121C] border border-white/5 p-8 rounded-[2rem] shadow-xl">
+                        <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
+                            <div>
+                                <h4 className="text-sm font-scholar text-white uppercase tracking-[0.2em]">Récords Académicos</h4>
+                                <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest mt-1">Hitos de Sabiduría</p>
+                            </div>
+                            <span className="text-2xl animate-pulse">🏆</span>
                         </div>
-                        <div className="max-h-[400px] overflow-y-auto">
-                            {notificaciones.length > 0 ? notificaciones.map((n) => (
-                                <div
-                                    key={n.id_notificacion}
-                                    onClick={() => marcarLeida(n.id_notificacion)}
-                                    className={`p-4 border-b border-white/5 flex items-start gap-4 hover:bg-white/5 transition-colors cursor-pointer ${!n.leida ? 'border-l-4 border-l-shinobi-gold bg-shinobi-gold/5' : ''}`}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {hitos.map(hito => (
+                                <div 
+                                    key={hito.id} 
+                                    className={`p-5 rounded-2xl border transition-all duration-500 flex items-center gap-4
+                                        ${hito.logrado 
+                                            ? 'bg-shinobi-gold/10 border-shinobi-gold/30 hover:bg-shinobi-gold/20 hover:border-shinobi-gold/50 shadow-[0_0_15px_rgba(197,160,89,0.1)]' 
+                                            : 'bg-slate-900/50 border-white/5 opacity-60 grayscale'}`}
                                 >
-                                    <div className={`w-2 h-2 mt-1.5 rounded-full ${!n.leida ? 'bg-shinobi-gold animate-pulse' : 'bg-slate-700'}`}></div>
-                                    <div className="flex-1">
-                                        <p className={`text-sm ${!n.leida ? 'text-white font-bold' : 'text-slate-400'}`}>{n.mensaje}</p>
-                                        <span className="text-[10px] text-slate-600 uppercase font-mono">{new Date(n.fecha_creacion).toLocaleString()}</span>
+                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-inner
+                                        ${hito.logrado ? 'bg-shinobi-gold/20 border border-shinobi-gold/50' : 'bg-black border border-white/10'}`}>
+                                        {hito.logrado ? hito.icono : '🔒'}
                                     </div>
-                                    {!n.leida && <span className="text-[8px] text-shinobi-gold font-bold uppercase">Nueva</span>}
+                                    <div>
+                                        <h5 className={`text-xs font-black uppercase tracking-wider mb-1 ${hito.logrado ? 'text-shinobi-gold' : 'text-slate-400'}`}>
+                                            {hito.titulo}
+                                        </h5>
+                                        <p className="text-[10px] text-slate-400 leading-tight">
+                                            {hito.desc}
+                                        </p>
+                                    </div>
                                 </div>
-                            )) : (
-                                <p className="p-10 text-center text-slate-600 italic text-sm">No hay mensajes en tu pergamino.</p>
-                            )}
+                            ))}
                         </div>
                     </div>
-
-                    <div className="bg-[#0E121C] border border-white/5 p-8 rounded-2xl space-y-6">
-                        <h4 className="text-xs font-scholar text-white uppercase tracking-widest">Ajustes de Seguridad</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <input type="password" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-shinobi-gold outline-none" placeholder="Nueva Contraseña" />
-                            <input type="password" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-shinobi-gold outline-none" placeholder="Confirmar Sello" />
-                        </div>
-                        <button className="w-full bg-shinobi-gold text-black py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white transition-all shadow-lg">
-                            Actualizar Registro Ninja
-                        </button>
-                    </div>
-
                 </div>
+
             </div>
         </div>
     );

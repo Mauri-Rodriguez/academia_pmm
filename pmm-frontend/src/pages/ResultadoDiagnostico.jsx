@@ -5,10 +5,8 @@ const ResultadoDiagnostico = () => {
     const location = useLocation();
     const navigate = useNavigate();
     
-    // 1. Estado para alternar entre el resumen y la revisión del examen
     const [modoRevision, setModoRevision] = useState(false);
     
-    // 2. Extraemos 'detalle' del state (enviado desde el archivo donde haces el fetch)
     const { rango, aciertos, detalle } = location.state || { 
         rango: 'Genin (Iniciado)', 
         aciertos: 0,
@@ -18,25 +16,15 @@ const ResultadoDiagnostico = () => {
     const esJonin = rango.includes('Jonin');
     const esChunin = rango.includes('Chunin');
 
-    // Función para pintar de rojo la incorrecta, y neutral el resto
-const obtenerClaseOpcion = (opcion, pregunta) => {
+    const obtenerClaseOpcion = (opcion, pregunta) => {
         const esLaCorrecta = opcion.texto.trim().toLowerCase() === pregunta.respuesta_correcta.trim().toLowerCase() || opcion.clave === pregunta.respuesta_correcta;
         const fueSeleccionada = opcion.texto.trim().toLowerCase() === pregunta.respuesta_usuario.trim().toLowerCase() || opcion.clave === pregunta.respuesta_usuario;
 
-        // Si el usuario seleccionó esta opción y acertó
-        if (fueSeleccionada && esLaCorrecta) {
-            return "bg-green-500/20 border-green-500 text-green-300"; 
-        }
-        
-        // Si el usuario seleccionó esta opción y se equivocó
-        if (fueSeleccionada && !esLaCorrecta) {
-            return "bg-red-500/20 border-red-500 text-red-300"; 
-        }
-
-        // Las demás opciones (incluyendo la correcta si el usuario no la eligió) permanecen neutrales
+        if (fueSeleccionada && esLaCorrecta) return "bg-green-500/20 border-green-500 text-green-300"; 
+        if (fueSeleccionada && !esLaCorrecta) return "bg-red-500/20 border-red-500 text-red-300"; 
         return "bg-white/5 border-white/10 text-slate-400"; 
     };
-    // --- VISTA 2: REVISIÓN DE PREGUNTAS ---
+
     if (modoRevision) {
         return (
             <div className="min-h-screen bg-[#05070A] flex flex-col items-center py-10 px-6 relative">
@@ -67,10 +55,7 @@ const obtenerClaseOpcion = (opcion, pregunta) => {
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
                                         {item.opciones.map((opcion, idx) => (
-                                            <div 
-                                                key={idx} 
-                                                className={`p-4 rounded-xl border ${obtenerClaseOpcion(opcion, item)} transition-all`}
-                                            >
+                                            <div key={idx} className={`p-4 rounded-xl border ${obtenerClaseOpcion(opcion, item)} transition-all`}>
                                                 <span className="font-bold mr-2 opacity-60 uppercase">{opcion.clave.replace('opcion_', '')})</span>
                                                 {opcion.texto}
                                             </div>
@@ -79,7 +64,7 @@ const obtenerClaseOpcion = (opcion, pregunta) => {
                                 </div>
                             ))
                         ) : (
-                            <p className="text-center text-slate-400">No hay detalles disponibles para esta evaluación. Asegúrate de pasar el 'detalle' en la navegación de React Router.</p>
+                            <p className="text-center text-slate-400">No hay detalles disponibles.</p>
                         )}
                     </div>
                 </div>
@@ -87,7 +72,6 @@ const obtenerClaseOpcion = (opcion, pregunta) => {
         );
     }
 
-    // --- VISTA 1: RESULTADO PRINCIPAL ---
     return (
         <div className="min-h-screen bg-[#05070A] flex flex-col items-center justify-center p-6 relative overflow-hidden">
             <div className={`absolute w-[500px] h-[500px] blur-[120px] opacity-20 rounded-full 
@@ -96,11 +80,11 @@ const obtenerClaseOpcion = (opcion, pregunta) => {
 
             <div className="max-w-2xl w-full text-center z-10 animate-in fade-in zoom-in duration-1000">
                 <span className="text-shinobi-gold font-scholar tracking-[0.5em] uppercase text-xs opacity-60 mb-4 block">
-                    Análisis de Chakra Completado
+                    Análisis Completado
                 </span>
                 
                 <h1 className="text-6xl font-scholar text-white mb-2 tracking-tighter uppercase">
-                    Tu Rango es <br />
+                    Tu Nivel es <br />
                     <span className={esJonin ? 'text-purple-500' : esChunin ? 'text-blue-500' : 'text-shinobi-gold'}>
                         {rango}
                     </span>
@@ -119,13 +103,12 @@ const obtenerClaseOpcion = (opcion, pregunta) => {
 
                 <p className="text-slate-400 italic text-sm mb-12 px-10 leading-relaxed">
                     {esJonin 
-                        ? "Increíble. Tu dominio de las artes algebraicas es comparable al de un maestro. Los archivos prohibidos están a tu disposición." 
+                        ? "Increíble. Tu dominio de las artes algebraicas es comparable al de un maestro. Los archivos avanzados están a tu disposición." 
                         : esChunin 
-                        ? "Has demostrado ser un guerrero competente. Tu lógica es sólida, pero aún queda camino para alcanzar la maestría."
-                        : "Tu camino ninja apenas comienza. Entrena duro en la biblioteca para fortalecer tus fundamentos matemáticos."}
+                        ? "Has demostrado ser un estudiante competente. Tu lógica es sólida, pero aún queda camino para alcanzar la maestría."
+                        : "Tu camino académico apenas comienza. Entrena duro en la biblioteca para fortalecer tus fundamentos matemáticos."}
                 </p>
 
-                {/* CONTENEDOR DE BOTONES ACTUALIZADO */}
                 <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
                     {detalle && detalle.length > 0 && (
                         <button 
@@ -137,10 +120,11 @@ const obtenerClaseOpcion = (opcion, pregunta) => {
                     )}
 
                     <button 
-                        onClick={() => navigate('/estudiante/dashboard')}
+                        // 🚩 AQUÍ ENVIAMOS EL STATE PARA ACTIVAR EL ONBOARDING EN EL DASHBOARD
+                        onClick={() => navigate('/estudiante/dashboard', { state: { nuevoIngreso: true } })}
                         className="group relative px-12 py-5 bg-shinobi-gold text-black font-black uppercase tracking-[0.3em] text-[11px] rounded-full hover:scale-105 transition-all shadow-[0_0_30px_rgba(212,175,55,0.3)]"
                     >
-                        Ingresar al Dojo
+                        Ingresar al Panel
                         <span className="ml-4 group-hover:translate-x-2 inline-block transition-transform">→</span>
                     </button>
                 </div>
