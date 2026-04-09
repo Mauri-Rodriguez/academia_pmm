@@ -111,9 +111,9 @@ const CampanaNotificaciones = () => {
                                 notificaciones.map((notif) => (
                                     <div
                                         key={notif.id_notificacion}
-                                        oonClick={() => marcarComoLeida(notif.id_notificacion, notif.ruta)}
+                                        onClick={() => marcarComoLeida(notif.id_notificacion, notif.ruta)} 
                                         className={`p-4 border-b border-white/5 cursor-pointer transition-colors flex gap-4 items-start
-                                            ${notif.leida ? 'opacity-60 hover:bg-white/5' : 'bg-shinobi-gold/5 hover:bg-shinobi-gold/10'}`}
+            ${notif.leida ? 'opacity-60 hover:bg-white/5' : 'bg-shinobi-gold/5 hover:bg-shinobi-gold/10'}`}
                                     >
                                         <div className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${notif.leida ? 'bg-transparent' : 'bg-shinobi-gold shadow-[0_0_8px_rgba(197,160,89,0.8)]'}`}></div>
                                         <div>
