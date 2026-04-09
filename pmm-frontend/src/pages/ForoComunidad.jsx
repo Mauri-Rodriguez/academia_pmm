@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 // 🚩 NUEVO: Importamos BACKEND_URL para arreglar las fotos
-import api, { BACKEND_URL } from '../api/api'; 
+import api, { BACKEND_URL } from '../api/api';
 import { useNavigate } from 'react-router-dom';
 
 const ForoComunidad = () => {
     const navigate = useNavigate();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
-    
+
     // Estados para MODAL DE CREACIÓN
     const [mostrarModal, setMostrarModal] = useState(false);
     const [nuevaMision, setNuevaMision] = useState({ titulo: '', contenido: '' });
@@ -34,13 +34,13 @@ const ForoComunidad = () => {
     // 🚩 NUEVO: Función helper para construir la URL absoluta de las imágenes
     const obtenerUrlImagen = (ruta) => {
         if (!ruta) return null;
-        if (ruta.startsWith('http')) return ruta; 
+        if (ruta.startsWith('http')) return ruta;
         return `${BACKEND_URL}${ruta.startsWith('/') ? '' : '/'}${ruta}`;
     };
 
     const generarColorAvatar = (nombre = "Anónimo") => {
         const colores = [
-            '#EF4444', '#3B82F6', '#10B981', '#F59E0B', 
+            '#EF4444', '#3B82F6', '#10B981', '#F59E0B',
             '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'
         ];
         let hash = 0;
@@ -68,7 +68,7 @@ const ForoComunidad = () => {
         try {
             const res = await api.get('/api/estudiante/foro/temas');
             setPosts(Array.isArray(res.data) ? res.data : []);
-        } catch (err) { console.error("Error al cargar muro"); } 
+        } catch (err) { console.error("Error al cargar muro"); }
         finally { setLoading(false); }
     };
 
@@ -113,7 +113,7 @@ const ForoComunidad = () => {
     const guardarEdicion = async (e) => {
         e.preventDefault();
         if (!misionAEditar.titulo || !misionAEditar.contenido) return;
-        
+
         const formData = new FormData();
         formData.append('titulo', misionAEditar.titulo);
         formData.append('contenido', misionAEditar.contenido);
@@ -146,7 +146,7 @@ const ForoComunidad = () => {
             });
             setNuevoComentario("");
             cargarComentarios(misionSeleccionada.id_post);
-        } catch (err) { alert("Error al comentar."); } 
+        } catch (err) { alert("Error al comentar."); }
         finally { setEnviandoComentario(false); }
     };
 
@@ -158,8 +158,8 @@ const ForoComunidad = () => {
             });
             setComentarioEditando(null);
             cargarComentarios(misionSeleccionada.id_post);
-        } catch (err) { 
-            alert("Error al editar el comentario."); 
+        } catch (err) {
+            alert("Error al editar el comentario.");
         }
     };
 
@@ -173,11 +173,11 @@ const ForoComunidad = () => {
 
     return (
         <div className="min-h-screen bg-[#05070A] text-slate-300 font-sans pb-20">
-            
+
             <nav className="sticky top-0 z-50 bg-[#0E121C]/90 backdrop-blur-md border-b border-white/5 px-6 py-4 shadow-2xl">
                 <div className="max-w-3xl mx-auto flex justify-between items-center">
                     <div className="flex items-center gap-4">
-                        <button 
+                        <button
                             onClick={() => navigate('/estudiante/dashboard')}
                             className="p-2.5 rounded-full bg-white/5 hover:bg-shinobi-gold hover:text-black transition-all border border-white/10 group"
                             title="Regresar al Panel"
@@ -190,9 +190,9 @@ const ForoComunidad = () => {
                             Aldea <span className="text-shinobi-gold">Digital</span>
                         </h1>
                     </div>
-                    
-                    <button 
-                        onClick={() => setMostrarModal(true)} 
+
+                    <button
+                        onClick={() => setMostrarModal(true)}
                         className="bg-shinobi-gold text-black px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.1em] hover:bg-white transition-all shadow-lg shadow-shinobi-gold/10 active:scale-95"
                     >
                         + Nueva Misión
@@ -208,23 +208,23 @@ const ForoComunidad = () => {
                             <p className="animate-pulse text-shinobi-gold font-scholar text-xs uppercase">Sincronizando Muro...</p>
                         </div>
                     ) : posts.map((post) => {
+                        const tieneFoto = post.autor_foto != null;
                         const esMio = Number(post.id_usuario) === Number(usuarioActualId);
-                        const mostrarAvatar = esMio && fotoUsuarioActual;
 
                         return (
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                                key={post.id_post} 
+                                key={post.id_post}
                                 className="bg-[#0E121C] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 transition-colors shadow-xl relative"
                             >
                                 <div className="p-4 flex justify-between items-start">
                                     <div className="flex items-center gap-3">
-                                        <div 
+                                        <div
                                             className="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold border-2 border-black/20 shadow-inner overflow-hidden"
-                                            style={{ backgroundColor: !mostrarAvatar ? generarColorAvatar(post.autor) : 'transparent' }}
+                                            style={{ backgroundColor: !tieneFoto ? generarColorAvatar(post.autor) : 'transparent' }}
                                         >
-                                            {mostrarAvatar ? (
-                                                <img src={obtenerUrlImagen(fotoUsuarioActual)} alt={post.autor} className="w-full h-full object-cover" />
+                                            {tieneFoto ? (
+                                                <img src={obtenerUrlImagen(post.autor_foto)} alt={post.autor} className="w-full h-full object-cover" />
                                             ) : (
                                                 post.autor?.charAt(0).toUpperCase() || "N"
                                             )}
@@ -237,17 +237,17 @@ const ForoComunidad = () => {
 
                                     {esMio && (
                                         <div className="flex gap-2">
-                                            <button 
-                                                onClick={() => abrirEdicion(post)} 
+                                            <button
+                                                onClick={() => abrirEdicion(post)}
                                                 className="text-slate-500 hover:text-shinobi-gold p-1 transition-colors"
                                                 title="Editar Pergamino"
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                 </svg>
                                             </button>
-                                            <button 
-                                                onClick={() => eliminarMision(post.id_post)} 
+                                            <button
+                                                onClick={() => eliminarMision(post.id_post)}
                                                 className="text-slate-600 hover:text-red-500 p-1 transition-colors"
                                                 title="Eliminar Pergamino"
                                             >
@@ -266,16 +266,16 @@ const ForoComunidad = () => {
 
                                 {post.imagen_url && (
                                     <div className="bg-black/40 border-y border-white/5 flex justify-center overflow-hidden">
-                                        <img 
+                                        <img
                                             src={obtenerUrlImagen(post.imagen_url)}
-                                            className="max-w-full h-auto max-h-[500px] object-contain hover:scale-[1.02] transition-transform duration-500" 
-                                            alt="evidencia" 
+                                            className="max-w-full h-auto max-h-[500px] object-contain hover:scale-[1.02] transition-transform duration-500"
+                                            alt="evidencia"
                                         />
                                     </div>
                                 )}
 
                                 <div className="p-2 px-4 border-t border-white/5">
-                                    <button 
+                                    <button
                                         onClick={() => setMisionSeleccionada(post)}
                                         className="flex items-center justify-center gap-2 w-full text-slate-400 hover:text-shinobi-gold text-xs font-bold transition-all py-3 hover:bg-white/5 rounded-lg"
                                     >
@@ -291,8 +291,8 @@ const ForoComunidad = () => {
                 </div>
             ) : (
                 <div className="max-w-2xl mx-auto mt-8 px-4">
-                    <button 
-                        onClick={() => setMisionSeleccionada(null)} 
+                    <button
+                        onClick={() => setMisionSeleccionada(null)}
                         className="mb-4 text-slate-500 hover:text-white text-xs font-bold flex items-center gap-2 group transition-colors"
                     >
                         <span className="group-hover:-translate-x-1 transition-transform">←</span> Volver al Muro Principal
@@ -300,7 +300,7 @@ const ForoComunidad = () => {
 
                     <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#0E121C] border border-shinobi-gold/20 rounded-2xl overflow-hidden shadow-2xl">
                         <div className="p-5 border-b border-white/5 bg-black/20 flex items-center gap-4">
-                            <div 
+                            <div
                                 className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold overflow-hidden"
                                 style={{ backgroundColor: !(Number(misionSeleccionada.id_usuario) === Number(usuarioActualId) && fotoUsuarioActual) ? generarColorAvatar(misionSeleccionada.autor) : 'transparent' }}
                             >
@@ -326,37 +326,40 @@ const ForoComunidad = () => {
 
                         <div className="bg-black/30 p-6 space-y-6 border-t border-white/10">
                             <h4 className="text-[10px] uppercase tracking-[0.4em] text-slate-500 font-black">Respuestas de la Aldea</h4>
-                            
+
                             <div className="space-y-4">
                                 {comentarios.map((c) => {
+                                    // 1. Verificamos si el autor del comentario tiene foto en la base de datos
+                                    const tieneFotoComentario = c.autor_foto != null;
+
+                                    // 2. Mantenemos esto para saber si mostramos los botones de Editar/Borrar
                                     const esMiComentario = Number(c.id_usuario) === Number(usuarioActualId);
-                                    const mostrarAvatarComentario = esMiComentario && fotoUsuarioActual;
 
                                     return (
                                         <div key={c.id_comentario} className="flex gap-3">
-                                            <div 
+                                            <div
                                                 className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold shadow-md overflow-hidden"
-                                                style={{ backgroundColor: !mostrarAvatarComentario ? generarColorAvatar(c.autor) : 'transparent' }}
+                                                style={{ backgroundColor: !tieneFotoComentario ? generarColorAvatar(c.autor) : 'transparent' }}
                                             >
-                                                {mostrarAvatarComentario ? (
-                                                    <img src={obtenerUrlImagen(fotoUsuarioActual)} alt={c.autor} className="w-full h-full object-cover" />
+                                                {tieneFotoComentario ? (
+                                                    <img src={obtenerUrlImagen(c.autor_foto)} alt={c.autor} className="w-full h-full object-cover" />
                                                 ) : (
                                                     c.autor?.charAt(0).toUpperCase() || "N"
                                                 )}
                                             </div>
-                                            
+
                                             <div className="bg-[#1A2131] p-4 rounded-2xl rounded-tl-none flex-1 relative group">
                                                 <div className="flex justify-between items-center mb-1">
                                                     <span className="text-xs font-black text-shinobi-gold">{c.autor || "Ninja"}</span>
-                                                    
+
                                                     {esMiComentario && (
                                                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <button 
+                                                            <button
                                                                 type="button"
                                                                 onClick={() => {
                                                                     setComentarioEditando(c.id_comentario);
                                                                     setTextoComentarioEditado(c.comentario);
-                                                                }} 
+                                                                }}
                                                                 className="text-slate-500 hover:text-[#3B82F6] transition-all p-1"
                                                                 title="Editar respuesta"
                                                             >
@@ -364,9 +367,9 @@ const ForoComunidad = () => {
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                                 </svg>
                                                             </button>
-                                                            <button 
+                                                            <button
                                                                 type="button"
-                                                                onClick={() => eliminarComentario(c.id_comentario)} 
+                                                                onClick={() => eliminarComentario(c.id_comentario)}
                                                                 className="text-slate-500 hover:text-red-500 transition-all p-1"
                                                                 title="Eliminar respuesta"
                                                             >
@@ -386,16 +389,16 @@ const ForoComunidad = () => {
                                                             onChange={(e) => setTextoComentarioEditado(e.target.value)}
                                                         />
                                                         <div className="flex justify-end gap-3">
-                                                            <button 
+                                                            <button
                                                                 type="button"
-                                                                onClick={() => setComentarioEditando(null)} 
+                                                                onClick={() => setComentarioEditando(null)}
                                                                 className="text-[10px] text-slate-400 hover:text-white uppercase font-bold"
                                                             >
                                                                 Cancelar
                                                             </button>
-                                                            <button 
+                                                            <button
                                                                 type="button"
-                                                                onClick={() => guardarEdicionComentario(c.id_comentario)} 
+                                                                onClick={() => guardarEdicionComentario(c.id_comentario)}
                                                                 className="text-[10px] bg-[#3B82F6] text-white px-4 py-1.5 rounded-md hover:bg-white hover:text-[#3B82F6] uppercase font-black transition-colors"
                                                             >
                                                                 Guardar
@@ -412,7 +415,7 @@ const ForoComunidad = () => {
                             </div>
 
                             <form onSubmit={enviarComentario} className="flex gap-3 pt-6 border-t border-white/5">
-                                <div 
+                                <div
                                     className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-xs shadow-lg overflow-hidden"
                                     style={{ backgroundColor: !fotoUsuarioActual ? generarColorAvatar("Tú") : 'transparent' }}
                                 >
@@ -423,13 +426,13 @@ const ForoComunidad = () => {
                                     )}
                                 </div>
                                 <div className="flex-1 flex flex-col gap-3">
-                                    <textarea 
+                                    <textarea
                                         className="w-full bg-[#1A2131] border border-white/10 rounded-2xl p-4 text-sm text-white outline-none focus:border-shinobi-gold/50 transition-all resize-none h-24 shadow-inner"
                                         placeholder="Escribe una respuesta técnica..."
                                         value={nuevoComentario}
                                         onChange={(e) => setNuevoComentario(e.target.value)}
                                     />
-                                    <button 
+                                    <button
                                         disabled={enviandoComentario}
                                         className="self-end bg-shinobi-gold text-black px-8 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-white transition-all disabled:opacity-50 active:scale-95 shadow-lg shadow-shinobi-gold/5"
                                     >
@@ -447,7 +450,7 @@ const ForoComunidad = () => {
                 {mostrarModal && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMostrarModal(false)} className="absolute inset-0" />
-                        <motion.form 
+                        <motion.form
                             initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }}
                             onSubmit={publicarMision}
                             className="bg-[#0E121C] border border-shinobi-gold/30 rounded-[2.5rem] p-8 max-w-lg w-full relative z-10 shadow-[0_0_50px_rgba(197,160,89,0.1)]"
@@ -456,11 +459,11 @@ const ForoComunidad = () => {
                                 <h2 className="text-white font-scholar text-2xl tracking-tighter uppercase italic">Nueva Misión de <span className="text-shinobi-gold">Ayuda</span></h2>
                                 <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">El conocimiento es el arma más fuerte</p>
                             </div>
-                            
+
                             <div className="space-y-5">
-                                <input className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-shinobi-gold transition-all" placeholder="Título de la duda..." value={nuevaMision.titulo} onChange={(e) => setNuevaMision({...nuevaMision, titulo: e.target.value})} />
-                                <textarea className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none h-36 resize-none focus:border-shinobi-gold transition-all" placeholder="Describe el problema matemático detalladamente..." value={nuevaMision.contenido} onChange={(e) => setNuevaMision({...nuevaMision, contenido: e.target.value})} />
-                                
+                                <input className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-shinobi-gold transition-all" placeholder="Título de la duda..." value={nuevaMision.titulo} onChange={(e) => setNuevaMision({ ...nuevaMision, titulo: e.target.value })} />
+                                <textarea className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none h-36 resize-none focus:border-shinobi-gold transition-all" placeholder="Describe el problema matemático detalladamente..." value={nuevaMision.contenido} onChange={(e) => setNuevaMision({ ...nuevaMision, contenido: e.target.value })} />
+
                                 <div className="flex flex-col gap-4">
                                     <label htmlFor="file-upload" className="w-full cursor-pointer bg-white/5 border border-dashed border-white/20 rounded-2xl p-4 text-center text-[10px] text-slate-400 hover:border-shinobi-gold hover:text-shinobi-gold transition-all">
                                         {archivo ? `✅ ${archivo.name}` : "📸 ADJUNTAR EVIDENCIA VISUAL"}
@@ -480,7 +483,7 @@ const ForoComunidad = () => {
                 {mostrarModalEdicion && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMostrarModalEdicion(false)} className="absolute inset-0" />
-                        <motion.form 
+                        <motion.form
                             initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }}
                             onSubmit={guardarEdicion}
                             className="bg-[#0E121C] border border-[#3B82F6]/30 rounded-[2.5rem] p-8 max-w-lg w-full relative z-10 shadow-[0_0_50px_rgba(59,130,246,0.1)]"
@@ -489,21 +492,21 @@ const ForoComunidad = () => {
                                 <h2 className="text-white font-scholar text-2xl tracking-tighter uppercase italic">Reescribir <span className="text-[#3B82F6]">Pergamino</span></h2>
                                 <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">Mejora tu solicitud de ayuda</p>
                             </div>
-                            
+
                             <div className="space-y-5">
-                                <input 
-                                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-[#3B82F6] transition-all" 
-                                    placeholder="Título de la duda..." 
-                                    value={misionAEditar.titulo} 
-                                    onChange={(e) => setMisionAEditar({...misionAEditar, titulo: e.target.value})} 
+                                <input
+                                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-[#3B82F6] transition-all"
+                                    placeholder="Título de la duda..."
+                                    value={misionAEditar.titulo}
+                                    onChange={(e) => setMisionAEditar({ ...misionAEditar, titulo: e.target.value })}
                                 />
-                                <textarea 
-                                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none h-36 resize-none focus:border-[#3B82F6] transition-all" 
-                                    placeholder="Describe el problema matemático detalladamente..." 
-                                    value={misionAEditar.contenido} 
-                                    onChange={(e) => setMisionAEditar({...misionAEditar, contenido: e.target.value})} 
+                                <textarea
+                                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none h-36 resize-none focus:border-[#3B82F6] transition-all"
+                                    placeholder="Describe el problema matemático detalladamente..."
+                                    value={misionAEditar.contenido}
+                                    onChange={(e) => setMisionAEditar({ ...misionAEditar, contenido: e.target.value })}
                                 />
-                                
+
                                 <div className="flex flex-col gap-4">
                                     <label htmlFor="file-upload-edit" className="w-full cursor-pointer bg-white/5 border border-dashed border-white/20 rounded-2xl p-4 text-center text-[10px] text-slate-400 hover:border-[#3B82F6] hover:text-[#3B82F6] transition-all">
                                         {archivoEdicion ? `✅ ${archivoEdicion.name}` : "📸 ACTUALIZAR EVIDENCIA (OPCIONAL)"}
