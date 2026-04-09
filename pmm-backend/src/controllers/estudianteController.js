@@ -30,25 +30,24 @@ const extraerIdUsuario = (req) => {
 };
 
 // Función Helper para crear notificaciones internamente en el backend
-const crearNotificacion = async (id_usuario, mensaje, transaction = null) => {
+const crearNotificacion = async (id_usuario, mensaje, ruta = null, transaction = null) => {
     try {
-        // Preparamos las opciones básicas
+        // Ahora le pasamos la ruta en los reemplazos
         const opciones = {
-            replacements: [id_usuario, mensaje]
+            replacements: [id_usuario, mensaje, ruta, sqlDateTime] 
         };
         
-        // Solo inyectamos la transacción si realmente existe una activa
         if (transaction) {
             opciones.transaction = transaction;
         }
 
+        // Agregamos la columna 'ruta' al INSERT
         await db.query(
-            'INSERT INTO notificaciones (id_usuario, mensaje, leida, fecha_creacion) VALUES (?, ?, 0, NOW())',
+            'INSERT INTO notificaciones (id_usuario, mensaje, ruta, leida, fecha_creacion) VALUES (?, ?, ?, 0, ?)',
             opciones
         );
         
-        // 🚩 Esto imprimirá un mensaje verde en tu terminal de Railway/VSCode para que sepas que funcionó
-        console.log(`🔔 [NOTIFICACIÓN CREADA] Usuario ${id_usuario}: "${mensaje}"`);
+        console.log(`🔔 [NOTIFICACIÓN CREADA] Usuario ${id_usuario}: "${mensaje}" (Ruta: ${ruta || 'Ninguna'})`);
         
     } catch (error) {
         console.error("❌ [ERROR NOTIFICACIÓN]:", error.message);
@@ -706,10 +705,11 @@ exports.comentarMision = async (req, res) => {
                 
             // Solo le notificamos si alguien MÁS comentó su post
             if (postOriginal && Number(postOriginal.id_usuario) !== Number(id_usuario)) {
-                // Hacemos la inserción directa por si helper da algun problemas
-                await db.query(
-                    'INSERT INTO notificaciones (id_usuario, mensaje, leida, fecha_creacion) VALUES (?, ?, 0, NOW())',
-                    { replacements: [postOriginal.id_usuario, "📜 Un ninja de la aldea ha respondido a tu pergamino en el foro."] }
+                // 🚩 Usamos el Helper blindado que ya calcula la hora de Colombia y acepta la ruta
+                await crearNotificacion(
+                    postOriginal.id_usuario, 
+                    "📜 Un ninja de la aldea ha respondido a tu pergamino en el foro.",
+                    "/estudiante/foro" // 👈 ¡La ruta que hará que la notificación te lleve al foro!
                 );
             }
         } catch (notifError) {
@@ -726,7 +726,6 @@ exports.comentarMision = async (req, res) => {
         res.status(500).json({ error: "Falla en el servidor al guardar el comentario" }); 
     }
 };
-
 exports.obtenerComentarios = async (req, res) => {
     try {
         // 🚩 Agregamos u.foto_perfil AS autor_foto

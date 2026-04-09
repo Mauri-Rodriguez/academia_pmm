@@ -10,7 +10,7 @@ const CampanaNotificaciones = () => {
     const menuRef = useRef(null);
 
     // 1. Cargar las notificaciones al inicio
-const cargarNotificaciones = async () => {
+    const cargarNotificaciones = async () => {
         try {
             const res = await api.get('/api/estudiante/notificaciones');
             // 🛡️ ESCUDO: Si por alguna razón el backend no manda un array, forzamos uno vacío []
@@ -44,10 +44,10 @@ const cargarNotificaciones = async () => {
         try {
             await api.put(`/api/estudiante/notificaciones/${id}/leer`);
             // Actualizar el estado local para que desaparezca el punto rojo
-            setNotificaciones(notificaciones.map(n => 
+            setNotificaciones(notificaciones.map(n =>
                 n.id_notificacion === id ? { ...n, leida: 1 } : n
             ));
-            
+
             // Si la notificación requiere ir a algún lado (ej. el foro)
             if (ruta_redireccion) {
                 setAbierto(false);
@@ -63,7 +63,7 @@ const cargarNotificaciones = async () => {
     return (
         <div className="relative z-50" ref={menuRef}>
             {/* 🚩 BOTÓN DE LA CAMPANA */}
-            <button 
+            <button
                 onClick={() => setAbierto(!abierto)}
                 className="relative p-2 rounded-full hover:bg-white/5 transition-all text-slate-400 hover:text-shinobi-gold focus:outline-none"
             >
@@ -73,7 +73,7 @@ const cargarNotificaciones = async () => {
 
                 {/* Globo rojo de notificaciones */}
                 {noLeidas > 0 && (
-                    <motion.span 
+                    <motion.span
                         initial={{ scale: 0 }} animate={{ scale: 1 }}
                         className="absolute top-1 right-1 w-4 h-4 bg-rose-500 border-2 border-[#05070A] rounded-full text-[8px] font-bold text-white flex items-center justify-center shadow-[0_0_10px_rgba(244,63,94,0.5)]"
                     >
@@ -85,9 +85,9 @@ const cargarNotificaciones = async () => {
             {/* 🚩 MENÚ DESPLEGABLE */}
             <AnimatePresence>
                 {abierto && (
-                    <motion.div 
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }} 
-                        animate={{ opacity: 1, y: 0, scale: 1 }} 
+                    <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.2 }}
                         className="absolute right-0 mt-3 w-80 bg-[#0E121C]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
@@ -109,9 +109,9 @@ const cargarNotificaciones = async () => {
                                 </div>
                             ) : (
                                 notificaciones.map((notif) => (
-                                    <div 
+                                    <div
                                         key={notif.id_notificacion}
-                                        onClick={() => marcarComoLeida(notif.id_notificacion)}
+                                        oonClick={() => marcarComoLeida(notif.id_notificacion, notif.ruta)}
                                         className={`p-4 border-b border-white/5 cursor-pointer transition-colors flex gap-4 items-start
                                             ${notif.leida ? 'opacity-60 hover:bg-white/5' : 'bg-shinobi-gold/5 hover:bg-shinobi-gold/10'}`}
                                     >
