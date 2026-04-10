@@ -11,7 +11,7 @@ const Login = () => {
 
     const navigate = useNavigate();
 
-    // 🛡️ DOMINIOS PERMITIDOS (Con el acceso para estudiantes desbloqueado)
+    // 🛡️ DOMINIOS PERMITIDOS 
     const DOMINIOS_PERMITIDOS = [
         'uniajc.edu.co',
         'estudiante.uniajc.edu.co',
@@ -24,21 +24,30 @@ const Login = () => {
 
     // FUNCIÓN MAESTRA: Sincroniza la identidad en toda la aldea
     const guardarSesion = (token, usuario, requiereDiagnostico) => {
-        // 🧹 Limpieza de chakra para evitar sesiones residuales
+        // Limpieza previa para evitar conflictos de sesiones antiguas
         localStorage.clear();
 
-        // 🔑 Guardamos el token para las cabeceras de Axios
+        // Guardamos el token para las cabeceras de Axios   
         localStorage.setItem('token', token);
 
         // 👤 El objeto usuario completo para el ProtectedRoute
         localStorage.setItem('usuario', JSON.stringify(usuario));
 
-        // 🚩 Redirección inteligente por Rol y Estado
+        // 🚩 Redirección inteligente por Rol y Estado 
         if (usuario.rol === 'docente') {
             navigate('/docente/dashboard');
             return;
-        }
+        }   
 
+        // Extraer el primer nombre y guardarlo en 'user_name'
+        if (usuario && (usuario.nombre || usuario.nombre_completo)) {
+            const nombreCompleto = usuario.nombre || usuario.nombre_completo;
+            const primerNombre = nombreCompleto.split(' ')[0]; // Toma solo el primer nombre
+            localStorage.setItem('user_name', primerNombre);
+        } else {
+            localStorage.setItem('user_name', usuario.rol === 'docente' ? 'Sensei' : 'Estudiante');
+        }
+        // Redirección basada en el diagnóstico
         if (requiereDiagnostico === false) {
             console.log("🔥 Usuario veterano detectado. Dashboard directo.");
             navigate('/estudiante/dashboard');
@@ -68,7 +77,7 @@ const Login = () => {
         e.preventDefault();
         setError(''); // Limpiamos errores previos
 
-        // 🛡️ FILTRO DE SEGURIDAD FRONTEND (Fail Fast)
+        // FILTRO DE SEGURIDAD FRONTEND (Fail Fast)
         const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!regexCorreo.test(correo)) {
             return setError('El formato del correo es inválido.');
@@ -81,7 +90,7 @@ const Login = () => {
 
         setLoading(true);
         try {
-            // ✅ EL CAMBIO MÁGICO: Le agregamos el /api al inicio de la ruta
+            //  Le agregamos el /api al inicio de la ruta
             const res = await api.post('/api/auth/login', { correo, password });
 
             // 🚩 Sincronizamos la identidad
