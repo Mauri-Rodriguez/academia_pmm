@@ -12,7 +12,8 @@ const DashboardDocente = () => {
     const [busqueda, setBusqueda] = useState('');
     const [filtroNivel, setFiltroNivel] = useState('');
 
-    const nombreUsuario = localStorage.getItem('user_name') || 'Docente';
+const usuarioGuardado = JSON.parse(localStorage.getItem('usuario') || '{}');
+const nombreUsuario = usuarioGuardado.nombre_completo || 'Docente';
 
     const traerDatos = useCallback(async () => {
         try {
@@ -82,6 +83,9 @@ const DashboardDocente = () => {
         }
     };
 
+    // --- CÁLCULOS DINÁMICOS BLINDADOS ---
+    
+    // 1. Filtrado de la tabla
     const estudiantesFiltrados = estudiantes.filter(est => {
         const nombre = est.nombre?.toLowerCase() || '';
         const rango = est.rango_ia_asignado?.toLowerCase() || '';
@@ -89,6 +93,30 @@ const DashboardDocente = () => {
         const coincideNivel = filtroNivel === '' || rango.includes(filtroNivel.toLowerCase());
         return coincideBusqueda && coincideNivel;
     });
+
+    // 2. Alerta de Deserción: Cuenta cuántos están 'Inactivos' usando la función de evaluación
+    const alertasDesercion = estudiantes.filter(est => {
+        const conexion = evaluarConexion(est.ultima_conexion, est.estado);
+        return conexion.texto.includes('Inactivo');
+    }).length;
+
+    // 3. Efectividad Promedio: Extrae el % numérico y saca el promedio general
+    const calcularEfectividadPromedio = () => {
+        if (!estudiantes || estudiantes.length === 0) return "0.0%";
+        
+        const sumaAvance = estudiantes.reduce((acumulador, est) => {
+            // Convierte valores como "85%" o 85 a float de forma segura
+            const avanceStr = (est.avance_promedio || '0').toString().replace('%', '');
+            const avanceNum = parseFloat(avanceStr) || 0;
+            return acumulador + avanceNum;
+        }, 0);
+        
+        const promedio = sumaAvance / estudiantes.length;
+        return `${promedio.toFixed(1)}%`;
+    };
+
+    const efectividadPromedio = calcularEfectividadPromedio();
+
 
     if (loading) return (
         <div className="min-h-screen bg-[#020408] flex flex-col items-center justify-center p-4">
@@ -182,14 +210,14 @@ const DashboardDocente = () => {
                     <div className="bg-[#0E121C] border border-white/5 p-6 rounded-2xl flex items-center justify-between">
                         <div>
                             <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Efectividad Promedio</p>
-                            <p className="text-3xl font-scholar text-emerald-500">82.4%</p>
+                            <p className="text-3xl font-scholar text-emerald-500">{efectividadPromedio}</p>
                         </div>
                         <Activity className="text-emerald-500/20" size={40} />
                     </div>
                     <div className="bg-[#0E121C] border border-white/5 p-6 rounded-2xl flex items-center justify-between">
                         <div>
                             <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Alerta de Deserción</p>
-                            <p className="text-3xl font-scholar text-rose-500">2</p>
+                            <p className="text-3xl font-scholar text-rose-500">{alertasDesercion}</p>
                         </div>
                         <Zap className="text-rose-500/20" size={40} />
                     </div>
@@ -266,7 +294,7 @@ const DashboardDocente = () => {
                                                     <div className="w-24 h-1 bg-slate-800 rounded-full overflow-hidden">
                                                         <div 
                                                             className="h-full bg-shinobi-gold transition-all duration-1000" 
-                                                            style={{ width: est.avance_promedio || '0%' }}
+                                                            style={{ width: typeof est.avance_promedio === 'number' ? `${est.avance_promedio}%` : (est.avance_promedio || '0%') }}
                                                         ></div>
                                                     </div>
                                                 </div>
