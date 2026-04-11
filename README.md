@@ -2,44 +2,44 @@
 
 > **Plataforma web educativa orientada al aprendizaje de matemáticas, impulsada por Inteligencia Artificial y diseñada con un robusto sistema de gamificación temático.**
 
-![Estado](https://img.shields.io/badge/Estado-Producci%C3%B3n-success)
+![Estado](https://img.shields.io/badge/build-passing-brightgreen)
 ![Licencia](https://img.shields.io/badge/Licencia-MIT-blue)
 ![Versi%C3%B3n](https://img.shields.io/badge/Versi%C3%B3n-1.0.0-orange)
 
 ---
 
-## 📖 Descripción General
+##  Descripción General
 
 **Academia PMM** transforma el aprendizaje de las matemáticas en una aventura épica. A través de una temática "Ninja", los estudiantes realizan un examen de diagnóstico impulsado por IA para determinar su rango inicial, completan misiones (módulos), obtienen insignias y consultan al "Oráculo" (Tutor IA de Google Gemini) cuando tienen dudas.
 
 El sistema cuenta con un panel analítico avanzado para **Docentes**, permitiéndoles detectar los puntos débiles de la clase y descargar reportes de rendimiento detallados.
 
-## ✨ Características Principales
+##  Características Principales
 
-### 🎮 Gamificación (El Camino Ninja)
+###  Gamificación 
 - **Rangos Dinámicos:** Genin, Chunin, Jonin y Kage.
 - **Misiones y Sellos:** Progresión por módulos protegida por un sistema de "Piso de Cristal".
 - **Rachas de Constancia:** Recompensas por días consecutivos de estudio y control de zona horaria (UTC-5).
 - **Convalidación Automática:** Los estudiantes avanzados reciben medallas retroactivas según su diagnóstico.
 
-### 🤖 Integración con Inteligencia Artificial
+###  Integración con Inteligencia Artificial
 - **El Oráculo (Tutor Socrático):** Integración con `gemini-2.5-flash-lite`. Responde dudas guiando al estudiante sin darle la respuesta directa.
 - **Feedback Instantáneo:** Generación automática de explicaciones cuando un estudiante se equivoca.
 - **Microservicio Flask:** Algoritmo predictivo de asignación de rangos según el examen diagnóstico.
 
-### 🧑‍🏫 Analítica para Docentes
+###  Analítica para Docentes
 - Dashboard de monitoreo del rendimiento general.
 - Detección de **puntos débiles** grupales e individuales.
 - Exportación de reportes a archivos Excel (`.xlsx`) generados dinámicamente.
 
-### 🛡️ Seguridad y Autenticación
+###  Seguridad y Autenticación
 - Autenticación híbrida: JWT clásico + **Google OAuth2**.
 - Asignación de roles automática (Estudiante/Docente) basada en el dominio del correo.
 - Recuperación de contraseñas con flujos seguros y anti-enumeración (OWASP).
 
 ---
 
-## 🛠️ Arquitectura Tecnológica
+##  Arquitectura Tecnológica
 
 ### Backend (API REST)
 - **Entorno:** Node.js + Express
@@ -60,7 +60,7 @@ El sistema cuenta con un panel analítico avanzado para **Docentes**, permitién
 
 ---
 
-## 🚀 Guía de Instalación y Despliegue
+## Guía de Instalación y Despliegue
 
 ### 1. Prerrequisitos
 Asegúrate de tener instalados:
@@ -70,7 +70,7 @@ Asegúrate de tener instalados:
 
 ### 2. Clonar el repositorio
 ```bash
-git clone https://github.com/tu-usuario/academia_pmm.git
+git clone https://github.com/Mauri-Rodriguez/academia_pmm
 cd academia_pmm
 ```
 
