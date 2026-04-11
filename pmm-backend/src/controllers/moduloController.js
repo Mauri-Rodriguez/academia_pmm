@@ -3,7 +3,12 @@ const ProgresoEstudiante = require('../models/ProgresoEstudiante');
 const Diagnostico = require('../models/Diagnostico');
 const sequelize = require('../config/database'); // 🚩 ¡ESTA ERA LA PIEZA FALTANTE!
 
-// Obtener ejercicios de un módulo específico
+/**
+ * Obtiene todos los ejercicios pertenecientes a un módulo específico.
+ * @param {import('express').Request} req - Objeto de petición Express (params: id_modulo).
+ * @param {import('express').Response} res - Objeto de respuesta Express.
+ * @returns {Promise<void>} JSON con el listado de ejercicios.
+ */
 exports.obtenerEjerciciosModulo = async (req, res) => {
     try {
         const { id_modulo } = req.params;
@@ -14,7 +19,12 @@ exports.obtenerEjerciciosModulo = async (req, res) => {
     }
 };
 
-// Actualizar el porcentaje de avance
+/**
+ * Actualiza el porcentaje de avance de un estudiante en un módulo y recalcula su chakra (promedio total).
+ * @param {import('express').Request} req - Objeto de petición Express (body: id_modulo, porcentaje).
+ * @param {import('express').Response} res - Objeto de respuesta Express.
+ * @returns {Promise<void>} JSON confirmando la sincronización y el nuevo chakra total.
+ */
 exports.actualizarProgreso = async (req, res) => {
     try {
         const { id_modulo, porcentaje } = req.body;

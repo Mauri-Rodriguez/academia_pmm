@@ -13,6 +13,12 @@ if (!resend) console.warn("⚠️ [CONFIG] RESEND_API_KEY no detectada. Modo sim
 // -----------------------------------------------------------------
 // 1. Registro Manual (Arquitectura Startup)
 // -----------------------------------------------------------------
+/**
+ * Registra un nuevo usuario en la base de datos y envía un correo de activación.
+ * Asigna el rol ('docente' o 'estudiante') basado en el dominio del correo.
+ * @param {import('express').Request} req - Petición Express (body: nombre_completo, correo, password).
+ * @param {import('express').Response} res - Respuesta Express.
+ */
 exports.register = async (req, res) => {
     try {
         const { nombre_completo, correo, password } = req.body;
@@ -103,6 +109,11 @@ exports.register = async (req, res) => {
 // -----------------------------------------------------------------
 // 2. Verificar Correo (Triple-Check Validado)
 // -----------------------------------------------------------------
+/**
+ * Verifica el correo del usuario validando el token enviado a su email.
+ * @param {import('express').Request} req - Petición Express (params: token).
+ * @param {import('express').Response} res - Respuesta Express.
+ */
 exports.verificarCorreo = async (req, res) => {
     try {
         const { token } = req.params;
@@ -144,6 +155,11 @@ exports.verificarCorreo = async (req, res) => {
 // -----------------------------------------------------------------
 // 3. Inicio de Sesión (Login Clásico)
 // -----------------------------------------------------------------
+/**
+ * Inicia la sesión de un usuario de forma clásica (correo y contraseña).
+ * @param {import('express').Request} req - Petición Express (body: correo, password).
+ * @param {import('express').Response} res - Respuesta Express.
+ */
 exports.login = async (req, res) => {
     try {
         const { correo, password } = req.body;
@@ -196,6 +212,11 @@ exports.login = async (req, res) => {
 // -----------------------------------------------------------------
 // 4. Lógica Google OAuth (Auto-verificado)
 // -----------------------------------------------------------------
+/**
+ * Inicia sesión o registra automáticamente a un usuario mediante Google OAuth2.
+ * @param {import('express').Request} req - Petición Express (body: token).
+ * @param {import('express').Response} res - Respuesta Express.
+ */
 exports.googleLogin = async (req, res) => {
     try {
         const { token } = req.body;
@@ -272,6 +293,11 @@ exports.googleLogin = async (req, res) => {
 // -----------------------------------------------------------------
 // 5. Recuperación de Contraseña (OWASP Anti-Enumeración)
 // -----------------------------------------------------------------
+/**
+ * Inicia el proceso de recuperación de contraseña enviando un token al correo del usuario.
+ * @param {import('express').Request} req - Petición Express (body: correo).
+ * @param {import('express').Response} res - Respuesta Express.
+ */
 exports.forgotPassword = async (req, res) => {
     try {
         const { correo } = req.body;
@@ -329,6 +355,11 @@ exports.forgotPassword = async (req, res) => {
 // -----------------------------------------------------------------
 // 6. Restablecer Contraseña (Triple Validación OWASP)
 // -----------------------------------------------------------------
+/**
+ * Restablece la contraseña del usuario utilizando un token temporal.
+ * @param {import('express').Request} req - Petición Express (params: token, body: nuevaPassword).
+ * @param {import('express').Response} res - Respuesta Express.
+ */
 exports.resetPassword = async (req, res) => {
     try {
         const { token } = req.params;

@@ -5,6 +5,12 @@
 
 const jwt = require('jsonwebtoken');
 
+/**
+ * Middleware para verificar la presencia y validez de un token JWT.
+ * @param {import('express').Request} req - Petición Express.
+ * @param {import('express').Response} res - Respuesta Express.
+ * @param {import('express').NextFunction} next - Función next.
+ */
 exports.verificarToken = (req, res, next) => {
     const authHeader = req.header('Authorization');
 
@@ -40,6 +46,11 @@ exports.verificarToken = (req, res, next) => {
     }
 };
 
+/**
+ * Middleware para autorizar rutas según el rol del usuario.
+ * @param {string[]} rolesPermitidos - Arreglo de roles que tienen acceso (ej: ['docente', 'estudiante']).
+ * @returns {Function} Middleware de Express.
+ */
 exports.verificarRol = (rolesPermitidos) => {
     return (req, res, next) => {
         // Validación usando el objeto 'user' inyectado arriba

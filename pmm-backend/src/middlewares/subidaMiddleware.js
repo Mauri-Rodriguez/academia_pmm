@@ -1,6 +1,12 @@
 const multer = require('multer');
 const path = require('path');
 
+/**
+ * @module subidaMiddleware
+ * @description Middleware de Multer para gestionar la subida de archivos de imagen.
+ * Limita el tamaño a 5MB y solo permite formatos jpeg, jpg, png y webp.
+ */
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         // Guardamos todo en la misma carpeta para no complicar las rutas estáticas

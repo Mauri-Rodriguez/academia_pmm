@@ -36,7 +36,11 @@ const MAPA_NIVELES = {
 };
 
 /**
- * Actualiza el progreso parcial.
+ * Actualiza el progreso parcial de un estudiante en un módulo.
+ * Implementa "Piso de Cristal": solo actualiza si el nuevo porcentaje es mayor.
+ * @param {import('express').Request} req - Petición Express (body: id_modulo, porcentaje).
+ * @param {import('express').Response} res - Respuesta Express.
+ * @returns {Promise<void>}
  */
 exports.actualizarProgreso = async (req, res) => {
     const t = await sequelize.transaction();
@@ -70,7 +74,12 @@ exports.actualizarProgreso = async (req, res) => {
 };
 
 /**
- * FINALIZAR MÓDULO + DESBLOQUEO DE INSIGNIA + EVALUAR ASCENSO.
+ * Orquesta el proceso de finalización de un módulo.
+ * Registra el puntaje final, otorga la insignia del módulo y evalúa si el estudiante
+ * ha completado todos los módulos de su nivel para ascender de rango.
+ * @param {import('express').Request} req - Petición Express (body: id_modulo, puntaje_final).
+ * @param {import('express').Response} res - Respuesta Express.
+ * @returns {Promise<void>} JSON con el resultado y detalles del posible ascenso.
  */
 exports.finalizarModuloYEvaluarAscenso = async (req, res) => {
     const t = await sequelize.transaction();
@@ -180,7 +189,10 @@ exports.finalizarModuloYEvaluarAscenso = async (req, res) => {
 };
 
 /**
- * Recupera el estado de un módulo específico para un usuario.
+ * Recupera el progreso (porcentaje de avance) de un estudiante en un módulo específico.
+ * @param {import('express').Request} req - Petición Express (params: id_modulo).
+ * @param {import('express').Response} res - Respuesta Express.
+ * @returns {Promise<void>} JSON con el progreso o 0 si no existe.
  */
 exports.obtenerEstadoModulo = async (req, res) => {
     try {

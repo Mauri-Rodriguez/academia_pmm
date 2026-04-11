@@ -19,6 +19,11 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 // 3. HELPERS
 const jwt = require('jsonwebtoken');
 
+/**
+ * Extrae el ID del usuario desencriptando el JWT del header de autorización.
+ * @param {import('express').Request} req - Petición Express.
+ * @returns {number|null} El ID del usuario o null si no existe/es inválido.
+ */
 const extraerIdUsuario = (req) => {
     try {
         const authHeader = req.headers.authorization;
@@ -29,7 +34,14 @@ const extraerIdUsuario = (req) => {
     } catch (err) { return null; }
 };
 
-// Función Helper para crear notificaciones con manejo de zona horaria y transacciones
+/**
+ * Función Helper para crear notificaciones con manejo de zona horaria (UTC-5) y transacciones.
+ * @param {number} id_usuario - ID del usuario a notificar.
+ * @param {string} mensaje - Contenido de la notificación.
+ * @param {string|null} [ruta=null] - Enlace asociado a la notificación.
+ * @param {import('sequelize').Transaction|null} [transaction=null] - Transacción de Sequelize (Opcional).
+ * @returns {Promise<void>}
+ */
 const crearNotificacion = async (id_usuario, mensaje, ruta = null, transaction = null) => {
     try {
         // 1. Calculamos la hora de Colombia (UTC-5)
@@ -76,6 +88,12 @@ const crearNotificacion = async (id_usuario, mensaje, ruta = null, transaction =
 
 // --- ⚡ GESTIÓN DE ERRORES CON GEMINI 2.50 FLASH-LITE (100% TIEMPO REAL) ---
 
+/**
+ * Registra un fallo en un ejercicio, invoca a Gemini para generar una explicación socrática
+ * y lo guarda en el historial de errores del usuario.
+ * @param {import('express').Request} req - Petición Express (body: id_pregunta, respuesta_dada).
+ * @param {import('express').Response} res - Respuesta Express.
+ */
 exports.registrarFallo = async (req, res) => {
     try {
         const { id_pregunta, respuesta_dada } = req.body;
@@ -202,7 +220,12 @@ exports.obtenerPreguntasDiagnostico = async (req, res) => {
 };
 
 
-// 🚩 FUNCIÓN ACTUALIZADA: FINALIZAR MÓDULO CON RECOMPENSA VISUAL
+/**
+ * Finaliza un módulo otorgando el 100% de progreso, la insignia correspondiente
+ * y evalúa si el estudiante es apto para ascender de rango.
+ * @param {import('express').Request} req - Petición Express (body: id_modulo).
+ * @param {import('express').Response} res - Respuesta Express.
+ */
 exports.finalizarModulo = async (req, res) => {
     const t = await db.transaction();
     try {
@@ -356,7 +379,12 @@ exports.finalizarModulo = async (req, res) => {
     }
 };
 
-// 🚩 FUNCIÓN UNIFICADA: GUARDAR DIAGNÓSTICO + SINCRONIZACIÓN DE INSIGNIAS
+/**
+ * Guarda el puntaje del diagnóstico, lo envía a la IA de Flask para asignar un rango
+ * y sincroniza las insignias retroactivamente (Piso de cristal).
+ * @param {import('express').Request} req - Petición Express (body: puntaje).
+ * @param {import('express').Response} res - Respuesta Express.
+ */
 exports.guardarDiagnostico = async (req, res) => {
     const t = await db.transaction();
     try {
@@ -452,6 +480,11 @@ exports.guardarDiagnostico = async (req, res) => {
 
 // --- 🏯 DASHBOARD Y PROGRESO (ORDENAMIENTO PEDAGÓGICO) ---
 
+/**
+ * Carga las estadísticas principales del estudiante para su Dashboard, administra el motor de rachas diarias y recupera la ruta de aprendizaje.
+ * @param {import('express').Request} req - Petición Express.
+ * @param {import('express').Response} res - Respuesta Express.
+ */
 exports.obtenerDashboard = async (req, res) => {
     try {
         const id_usuario = extraerIdUsuario(req);
@@ -594,8 +627,12 @@ exports.obtenerDashboard = async (req, res) => {
     }
 };
 
-// 🚩 CORRECCIÓN 3: Actualizar progreso con protección de "Piso de Cristal"
-// No permite que un porcentaje menor pise uno mayor (evita que el 90% pise al 100%).
+/**
+ * Actualiza el progreso en un módulo con protección de "Piso de Cristal"
+ * (no permite que un porcentaje menor pise uno mayor ya alcanzado).
+ * @param {import('express').Request} req - Petición Express (body: id_modulo, porcentaje).
+ * @param {import('express').Response} res - Respuesta Express.
+ */
 exports.actualizarProgreso = async (req, res) => {
     try {
         const { id_modulo, porcentaje } = req.body;
@@ -866,6 +903,13 @@ exports.obtenerAnaliticaErrores = async (req, res) => {
 
 // --- 🤖 TUTOR IA INTERACTIVO (EL ORÁCULO) ---
 
+/**
+ * Actúa como "El Oráculo" (Tutor IA). Responde dudas del estudiante sobre
+ * un ejercicio específico sin dar la respuesta final usando Gemini 2.5 Flash-lite.
+ * @param {import('express').Request} req - Petición Express (body: id_pregunta, mensaje_estudiante).
+ * @param {import('express').Response} res - Respuesta Express.
+ * @returns {Promise<void>} JSON con la respuesta en texto generada por la IA.
+ */
 exports.consultarOraculo = async (req, res) => {
     try {
         const { id_pregunta, mensaje_estudiante } = req.body;

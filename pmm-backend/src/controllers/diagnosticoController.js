@@ -8,6 +8,11 @@
 const PreguntaDiagnostico = require('../models/PreguntaDiagnostico');
 const Diagnostico = require('../models/Diagnostico');
 
+/**
+ * Obtiene las preguntas del diagnóstico excluyendo la respuesta correcta por seguridad.
+ * @param {import('express').Request} req - Objeto de petición Express.
+ * @param {import('express').Response} res - Objeto de respuesta Express.
+ */
 exports.obtenerPreguntas = async (req, res) => {
     try {
         const preguntas = await PreguntaDiagnostico.findAll({
@@ -30,6 +35,12 @@ exports.obtenerPreguntas = async (req, res) => {
     }
 };
 
+/**
+ * Evalúa el diagnóstico inicial del usuario, se comunica con la IA para asignar el rango,
+ * y otorga progreso e insignias de forma retroactiva (Piso de Cristal).
+ * @param {import('express').Request} req - Objeto de petición Express (body: respuestas).
+ * @param {import('express').Response} res - Objeto de respuesta Express.
+ */
 exports.evaluarDiagnostico = async (req, res) => {
     // Usamos la instancia de sequelize para transacciones y consultas crudas de herencia
     const sequelize = Diagnostico.sequelize; 
@@ -181,6 +192,11 @@ exports.evaluarDiagnostico = async (req, res) => {
 // ============================================================================
 // 🛠️ RUTA DE DESARROLLO: Resetear progreso para pruebas
 // ============================================================================
+/**
+ * Elimina todo el progreso, insignias y diagnósticos del usuario (Útil para pruebas).
+ * @param {import('express').Request} req - Objeto de petición Express.
+ * @param {import('express').Response} res - Objeto de respuesta Express.
+ */
 exports.resetearProgresoPruebas = async (req, res) => {
     const sequelize = Diagnostico.sequelize;
     const t = await sequelize.transaction();

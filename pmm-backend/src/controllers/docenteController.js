@@ -10,8 +10,11 @@ const ExcelJS = require('exceljs');
 const Modulo = require('../models/Modulo');
 const db = require('../config/database');
 const { QueryTypes } = require('sequelize'); // 
+
 /**
- * Función 1: Obtener un resumen del rendimiento de todos los estudiantes (JSON).
+ * Obtiene un resumen del rendimiento de todos los estudiantes para el dashboard del docente.
+ * @param {import('express').Request} req - Objeto de petición Express.
+ * @param {import('express').Response} res - Objeto de respuesta Express.
  */
 exports.obtenerResumenEstudiantes = async (req, res) => {
     try {
@@ -71,7 +74,9 @@ exports.obtenerResumenEstudiantes = async (req, res) => {
 };
 
 /**
- * Función 2: Exportar el rendimiento de la clase a un archivo Excel descargable.
+ * Genera y descarga un reporte completo del rendimiento de la clase en formato Excel (.xlsx).
+ * @param {import('express').Request} req - Objeto de petición Express.
+ * @param {import('express').Response} res - Objeto de respuesta Express.
  */
 exports.descargarReporteExcel = async (req, res) => {
     try {
@@ -157,8 +162,12 @@ exports.descargarReporteExcel = async (req, res) => {
     }
 };
 
-
-
+/**
+ * Obtiene un reporte detallado del progreso y los puntos débiles de un estudiante individual.
+ * @param {import('express').Request} req - Objeto de petición Express (params: id).
+ * @param {import('express').Response} res - Objeto de respuesta Express.
+ * @returns {Promise<void>} JSON con el perfil completo del estudiante.
+ */
 exports.obtenerReporteIndividual = async (req, res) => {
     try {
         const { id } = req.params;

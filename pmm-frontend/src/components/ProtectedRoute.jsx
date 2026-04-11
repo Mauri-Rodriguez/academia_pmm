@@ -1,6 +1,13 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 
+/**
+ * Componente para proteger rutas según autenticación y roles de usuario.
+ * 
+ * @param {Object} props - Propiedades del componente.
+ * @param {string[]} props.allowedRoles - Arreglo con los roles permitidos (ej. ['estudiante']).
+ * @returns {JSX.Element} Renderiza el Outlet si tiene acceso, o redirige a la ruta correcta.
+ */
 const ProtectedRoute = ({ allowedRoles }) => {
     // 1. Extraemos el token y el usuario del localStorage
     const token = localStorage.getItem('token');

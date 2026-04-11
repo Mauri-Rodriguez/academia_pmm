@@ -11,8 +11,10 @@ const Insignia = require('../models/Insignia');
 const UsuarioInsignia = require('../models/UsuarioInsignia');
 
 /**
- * Función 1: Obtener la lista de ejercicios de un módulo específico.
- * Se oculta la respuesta correcta por seguridad y se ORDENA lógicamente.
+ * Obtiene la lista de ejercicios de un módulo específico, excluyendo la respuesta correcta.
+ * @param {import('express').Request} req - Petición Express (params: id_modulo).
+ * @param {import('express').Response} res - Respuesta Express.
+ * @returns {Promise<void>} JSON con la lista de ejercicios.
  */
 exports.obtenerEjerciciosPorModulo = async (req, res) => {
     try {
@@ -41,8 +43,10 @@ exports.obtenerEjerciciosPorModulo = async (req, res) => {
 };
 
 /**
- * Función 2: Evaluar la respuesta a un ejercicio individual.
- * Compara la respuesta, actualiza el progreso en MySQL y devuelve feedback.
+ * Evalúa la respuesta de un estudiante a un ejercicio, actualiza su progreso y devuelve feedback.
+ * @param {import('express').Request} req - Petición Express (body: id_ejercicio, respuesta_estudiante).
+ * @param {import('express').Response} res - Respuesta Express.
+ * @returns {Promise<void>} JSON con el resultado de la evaluación y estadísticas.
  */
 exports.evaluarEjercicio = async (req, res) => {
     try {
@@ -113,8 +117,10 @@ exports.evaluarEjercicio = async (req, res) => {
 };
 
 /**
- * Función 3: Finalizar un módulo de aprendizaje.
- * Registra la nota final y evalúa si el estudiante gana una insignia.
+ * Finaliza un módulo para un estudiante, registrando el puntaje final y otorgando una insignia si corresponde.
+ * @param {import('express').Request} req - Petición Express (body: id_modulo).
+ * @param {import('express').Response} res - Respuesta Express.
+ * @returns {Promise<void>} JSON con el resultado de la finalización y la insignia desbloqueada.
  */
 exports.finalizarModulo = async (req, res) => {
     try {
