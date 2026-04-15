@@ -18,8 +18,8 @@ El sistema cuenta con un panel analítico avanzado para **Docentes**, permitién
 
 ###  Gamificación 
 - **Rangos Dinámicos:** Genin, Chunin, Jonin y Kage.
-- **Misiones y Sellos:** Progresión por módulos protegida por un sistema de "Piso de Cristal".
-- **Rachas de Constancia:** Recompensas por días consecutivos de estudio y control de zona horaria (UTC-5).
+- **Misiones y Sellos:** Progresión por módulos 
+- **Rachas de Constancia:** Recompensas por días consecutivos de estudio 
 - **Convalidación Automática:** Los estudiantes avanzados reciben medallas retroactivas según su diagnóstico.
 
 ###  Integración con Inteligencia Artificial
